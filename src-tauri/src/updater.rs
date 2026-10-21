@@ -22,7 +22,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, State};
-use tauri_plugin_updater::{Updater, UpdaterExt};
+use tauri_plugin_updater::{Update, Updater, UpdaterExt};
 
 /// Manual fallback URL, shown while the updater is not configured or a check fails.
 const RELEASES_URL: &str = "https://github.com/Aceeee2077/BoolooPet/releases/latest";
@@ -37,11 +37,24 @@ const CONNECT_TIMEOUT: Duration = Duration::from_secs(4);
 const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 /// Downloads are large files, so the plugin must not inherit the probe timeout.
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(300);
+/// The plugin's own `check()` reads latest.json from GitHub. It must fail
+/// visibly and quickly instead of leaving the panel at "downloading 0%".
+const PLUGIN_CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 const CACHE_FILE: &str = "update-check.json";
 
-/// Holds the verified installer bytes between `update_download` and `update_install`.
+/// A verified installer plus the `Update` it came from.
+///
+/// Keeping the `Update` means installing never calls `check()` again: that is a
+/// network round-trip to GitHub, and doing it at install time left the restart
+/// hung with no error whenever GitHub was unreachable.
+pub struct PendingUpdate {
+    pub update: Update,
+    pub bytes: Vec<u8>,
+}
+
+/// Holds the verified installer between `update_download` and `update_install`.
 #[derive(Default)]
-pub struct DownloadedState(pub Mutex<Option<Vec<u8>>>);
+pub struct DownloadedState(pub Mutex<Option<PendingUpdate>>);
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -199,6 +212,18 @@ fn http_client(config: &ConfigState, follow_redirects: bool) -> Result<reqwest::
     }
 
     builder.build().map_err(|err| err.to_string())
+}
+
+/// The plugin's manifest fetch, bounded.
+///
+/// Its only timeout is the client timeout (300s here, sized for downloads), so a
+/// black-holed connection would sit there for five minutes. Twenty seconds of
+/// silence is a failure the panel can show.
+async fn checked_update(updater: &Updater) -> Result<Option<Update>, String> {
+    match tokio::time::timeout(PLUGIN_CHECK_TIMEOUT, updater.check()).await {
+        Ok(result) => result.map_err(|err| err.to_string()),
+        Err(_) => Err("the update check timed out".to_string()),
+    }
 }
 
 /// `/releases/tag/v0.6.24` → `0.6.24`. Anything that is not a semver tag (the
@@ -510,7 +535,10 @@ pub async fn update_download(
     config: State<'_, ConfigState>,
     downloaded: State<'_, DownloadedState>,
 ) -> Result<UpdateStateOut, String> {
-    let mut state = base_state(&app, &config, "downloading");
+    // "checking" first: the manifest fetch happens before any byte is pulled, and
+    // painting "downloading 0%" during it is what made a network stall look like
+    // a stuck download.
+    let mut state = base_state(&app, &config, "checking");
     emit_state(&app, &state);
 
     let updater = match plugin_updater(&app, &config) {
@@ -524,7 +552,7 @@ pub async fn update_download(
         }
     };
 
-    let update = match updater.check().await {
+    let update = match checked_update(&updater).await {
         Ok(Some(update)) => update,
         Ok(None) => {
             state.status = "up-to-date".to_string();
@@ -586,7 +614,7 @@ pub async fn update_download(
     };
 
     crate::logfile::info(format!("update {version} downloaded"));
-    *downloaded.0.lock().unwrap() = Some(bytes);
+    *downloaded.0.lock().unwrap() = Some(PendingUpdate { update, bytes });
 
     state.status = "downloaded".to_string();
     state.version = Some(version);
@@ -597,15 +625,11 @@ pub async fn update_download(
 }
 
 #[tauri::command]
-pub async fn update_install(
-    app: AppHandle,
-    config: State<'_, ConfigState>,
-    downloaded: State<'_, DownloadedState>,
-) -> Result<(), String> {
+pub async fn update_install(downloaded: State<'_, DownloadedState>) -> Result<(), String> {
     // The install is the step that can still fail after a download that looked
     // fine — signature verification lives in here — so it is the one place worth
     // wrapping: every failure mode ends up in the log with the same shape.
-    match run_install(&app, &config, downloaded.inner()).await {
+    match run_install(downloaded.inner()) {
         Ok(()) => Ok(()),
         Err(error) => {
             crate::logfile::error(format!("the update could not be installed: {error}"));
@@ -614,24 +638,27 @@ pub async fn update_install(
     }
 }
 
-async fn run_install(
-    app: &AppHandle,
-    config: &ConfigState,
-    downloaded: &DownloadedState,
-) -> Result<(), String> {
-    let bytes = downloaded
+/// Launch the installer that `update_download` already fetched and verified.
+///
+/// No network here on purpose: the `Update` (download URL + signature) is stored
+/// with the bytes, so restarting an update cannot fail because GitHub is down.
+fn run_install(downloaded: &DownloadedState) -> Result<(), String> {
+    let pending = downloaded
         .0
         .lock()
         .unwrap()
         .take()
         .ok_or_else(|| "no downloaded update".to_string())?;
-    let updater = plugin_updater(app, config)?;
-    let update = updater
-        .check()
-        .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "no update available".to_string())?;
-    update.install(bytes).map_err(|e| e.to_string())
+    // Logged before the hand-off: on Windows `install` exits the process itself.
+    crate::logfile::info(format!("handing {} to the installer", pending.update.version));
+    match pending.update.install(&pending.bytes) {
+        Ok(()) => Ok(()),
+        Err(err) => {
+            // Put it back so the retry button works without downloading again.
+            *downloaded.0.lock().unwrap() = Some(pending);
+            Err(err.to_string())
+        }
+    }
 }
 
 #[tauri::command]
@@ -639,7 +666,7 @@ pub async fn update_install_when_ready(
     app: AppHandle,
     config: State<'_, ConfigState>,
 ) -> Result<UpdateStateOut, String> {
-    let mut state = base_state(&app, &config, "downloading");
+    let mut state = base_state(&app, &config, "checking");
     emit_state(&app, &state);
 
     let updater = match plugin_updater(&app, &config) {
@@ -653,7 +680,7 @@ pub async fn update_install_when_ready(
         }
     };
 
-    let update = match updater.check().await {
+    let update = match checked_update(&updater).await {
         Ok(Some(update)) => update,
         Ok(None) => {
             state.status = "up-to-date".to_string();

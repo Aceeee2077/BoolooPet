@@ -1,6 +1,6 @@
 [package]
 name = "booloo"
-version = "0.6.26"
+version = "0.6.27"
 description = "Booloo · cross-platform desktop pet"
 authors = ["Booloo Contributors"]
 edition = "2021"
@@ -32,6 +32,9 @@ tauri-plugin-updater = "2"
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "system-proxy", "json"] }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 semver = "1"
+# Bounds the updater plugin's manifest fetch: its own timeout is the client
+# timeout, which is sized for downloads and 15x too long for a check.
+tokio = { version = "1", features = ["time"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"

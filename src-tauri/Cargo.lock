@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "booloo"
-version = "0.6.26"
+version = "0.6.27"
 dependencies = [
  "auto-launch",
  "base64 0.22.1",
@@ -330,6 +330,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
+ "tokio",
 ]
 
 [[package]]

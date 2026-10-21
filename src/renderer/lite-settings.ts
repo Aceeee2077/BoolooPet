@@ -250,8 +250,11 @@
     checkUpdateButton.disabled = state.status === 'checking' || state.status === 'downloading' ||
       state.status === 'dev' || state.status === 'unsupported';
     // The download button is only needed when the background download is off;
-    // otherwise the check already started pulling the bytes.
-    downloadUpdateButton.hidden = !(state.status === 'available' && !state.autoDownload);
+    // otherwise the check already started pulling the bytes. It doubles as the
+    // retry after a failed download, which would otherwise leave no way forward.
+    downloadUpdateButton.hidden = !(
+      state.status === 'error' || (state.status === 'available' && !state.autoDownload)
+    );
     installUpdateButton.hidden = state.status !== 'downloaded';
 
     const notes = state.notes || '';
