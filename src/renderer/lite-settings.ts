@@ -11,6 +11,17 @@
   const refine = $<HTMLButtonElement>('refine-image');
   const language = $<HTMLElement>('language');
   const languageButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('#language button[data-locale]'));
+  // Pages: every section stays mounted — the references above are resolved by id
+  // at load — so switching destinations only hides the pages that are not
+  // wanted. Nothing is re-rendered and no id is lost.
+  const navTabs = Array.from(document.querySelectorAll<HTMLButtonElement>('.side-nav [data-page-target]'));
+  const pagePanels = Array.from(document.querySelectorAll<HTMLElement>('.pages > .page'));
+  function showPage(name: string) {
+    for (const panel of pagePanels) panel.hidden = panel.dataset.page !== name;
+    for (const tab of navTabs) {
+      tab.setAttribute('aria-current', tab.dataset.pageTarget === name ? 'page' : 'false');
+    }
+  }
   /** The order of the chips; also the slot index the thumb slides to. */
   const LOCALE_ORDER: LocalePreference[] = ['system', 'zh', 'en'];
   const size = $<HTMLInputElement>('pet-size');
@@ -1101,9 +1112,14 @@
       reminderTime.value = timeValue(new Date(Date.now() + minutes * 60_000));
     });
   }
-  // The pet's right-click "Remind me…" entry opens this window at the section.
+  for (const tab of navTabs) {
+    tab.addEventListener('click', () => showPage(tab.dataset.pageTarget ?? 'pet'));
+  }
+  // The pet's right-click "Remind me…" entry opens this window at the section,
+  // which lives on the interaction page now — switch first, then focus.
   window.api.onSettingsFocusSection((section) => {
     if (section !== 'reminders') return;
+    showPage('interaction');
     if (!reminderTime.value) reminderTime.value = timeValue(new Date(Date.now() + 10 * 60_000));
     document.getElementById('reminders')?.scrollIntoView({ block: 'center' });
     reminderText.focus();

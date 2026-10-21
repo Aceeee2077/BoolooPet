@@ -17,6 +17,14 @@ body { margin: 0; }
      only the corners are transparent. */
   width: 100%;
   min-height: 100vh;
+  /* A fixed-height column: the header and the rail stay put and only the page
+     on the right scrolls. Fixed instead of "grow with content" because the
+     panel is paged now — a page's sections can be taller than the window, and
+     the window itself must never grow to fit them. */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   margin: 0;
   /* The 24 px inset lives on each row (header / section) instead of on the card,
      so the title bar reaches both edges of the glass instead of floating inside
@@ -68,6 +76,24 @@ header span { color: #9a7660; font-size: 12px; }
 .gh-tip { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 20; padding: 6px 12px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; color: #513a2c; font-size: 12px; font-weight: 700; white-space: nowrap; box-shadow: 0 6px 16px #75411630; opacity: 0; transform: translateX(-50%) scale(.85); transform-origin: top center; transition: opacity .2s ease, transform .25s ease; pointer-events: none; }
 .gh:hover .gh-tip, .gh:focus-within .gh-tip { opacity: 1; transform: translateX(-50%) scale(1); }
 section { padding: 18px 24px; border-bottom: 1px solid #efdacb99; }
+/* Paged layout: a rail of destinations beside a scroll area. The rail keeps a
+   fixed width so the tab labels never move as pages change, and only `.pages`
+   scrolls — the header stays visible above both. */
+.panel > header { flex: 0 0 auto; }
+.settings-body { flex: 1 1 auto; display: flex; min-height: 0; }
+.side-nav { flex: 0 0 168px; display: flex; flex-direction: column; gap: 2px; padding: 14px 10px 18px; overflow-y: auto; border-right: 1px solid #efdacb99; }
+.side-nav button { padding: 9px 12px; border: 0; border-radius: 10px; background: transparent; color: #8a6552; font-size: 13px; text-align: left; transition: background .18s ease, color .18s ease; }
+.side-nav button:hover { background: #ffead9a8; color: #8a4a24; }
+/* The chosen page is marked with a warm fill and an orange spine on the left,
+   the same accent the primary buttons use. */
+.side-nav button[aria-current="page"] { background: #ffe3cd; color: #8a4a24; font-weight: 600; box-shadow: inset 3px 0 0 #ea773b; }
+.side-nav button:focus-visible { outline: 2px solid #ea773b; outline-offset: -2px; }
+.pages { flex: 1 1 auto; min-width: 0; overflow-y: auto; overflow-x: hidden; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: #e9cbb6 transparent; }
+.pages::-webkit-scrollbar { width: 10px; }
+.pages::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: #e9cbb6; background-clip: content-box; }
+.pages::-webkit-scrollbar-track { background: transparent; }
+/* The last section on a page has nothing below it to separate from. */
+.page > section:last-child { border-bottom: 0; }
 h1, h2 { margin: 0 0 15px; font-size: 16px; }
 button { font: inherit; color: inherit; background: #ffffffd4; border: 1px solid #e9cbb6; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
 button:hover { background: #ffeadae6; }
@@ -159,9 +185,9 @@ header button { border: 0; background: transparent; }
 /* Click heatmap: GitHub's shape — a column per week, a row per weekday, with the
    month printed above the week it starts in. */
 /* A whole year in one row of 53 weeks. The cells are 10 px so the grid is 652 px
-   wide, which fits the 820 px window (and its 720 px minimum) with room to
-   spare; it is centred so the extra width reads as breathing room rather than
-   as a short chart. */
+   wide, which fits the paged window (960 px, minus the 168 px rail and 48 px of
+   section padding) with room to spare; it is centred so the extra width reads as
+   breathing room rather than as a short chart. */
 /* `safe` keeps the first week reachable if a narrow window ever does force the
    grid to scroll; browsers without it simply fall back to left-aligned. */
 .heatmap-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-bottom: 10px; }

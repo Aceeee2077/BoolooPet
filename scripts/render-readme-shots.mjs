@@ -49,10 +49,47 @@ if (!existsSync(join(RENDERER, 'settings.html'))) {
 
 const requested = process.argv.slice(2).filter((arg) => arg === 'zh' || arg === 'en');
 const languages = requested.length ? requested : ['zh', 'en'];
+// The settings window's real size (see build_settings in src-tauri/src/window.rs).
+// The panel is a fixed-height paged column now, so the shot has to use the same
+// viewport the app opens with — a different height would show the rail and the
+// pages laid out against a window the user never sees.
+const SETTINGS_WIDTH = 960;
+const SETTINGS_HEIGHT = 720;
 const dictionary = JSON.parse(readFileSync(I18N, 'utf8'));
 const scratch = mkdtempSync(join(tmpdir(), 'booloo-shots-'));
 
-/** A screenshot of `file` at exactly `width`x`height`, written to `target`. */
+/**
+ * Chrome's new headless mode still draws its own window frame, so `--window-size`
+ * is smaller than the viewport by a constant. Measure that once so the shots are
+ * exactly the size the app opens with instead of a guessed padding.
+ */
+function frameShortfall() {
+  const file = join(scratch, 'frame.html');
+  writeFileSync(file, '<!doctype html><meta charset="utf-8"><body><script>'
+    + "document.body.textContent = innerWidth + 'x' + innerHeight;</script></body>", 'utf8');
+  const dom = execFileSync(browser, [
+    '--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
+    '--force-device-scale-factor=1',
+    `--user-data-dir=${join(scratch, 'profile-frame')}`,
+    '--virtual-time-budget=1000',
+    '--window-size=1000,800',
+    '--dump-dom',
+    `file:///${file.replace(/\\/g, '/')}`,
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  const match = /<body>(\d+)x(\d+)<\/body>/.exec(dom);
+  if (!match) throw new Error('could not measure the headless window frame');
+  return { width: 1000 - Number(match[1]), height: 800 - Number(match[2]) };
+}
+const frame = frameShortfall();
+const windowSize = (width, height) => `${width + frame.width},${height + frame.height}`;
+
+/**
+ * A screenshot of `file` with a `width`x`height` viewport, written to `target`.
+ *
+ * Screenshot mode lays the page out at the full `--window-size` (unlike
+ * `--dump-dom`, which keeps a frame's worth of window chrome), so no
+ * compensation is needed here — the image is the viewport, pixel for pixel.
+ */
 function shoot(file, width, height, target) {
   // Chrome refuses to share a profile between runs, so every shot gets its own.
   const profile = `profile-${target.slice(target.lastIndexOf('\\') + 1).replace(/[^\w.-]/g, '_')}`;
@@ -74,9 +111,11 @@ function shoot(file, width, height, target) {
 }
 
 /** The DOM after the page settles — used to prove the right language rendered. */
-function settledDom(file) {
+function settledDom(file, width, height) {
   return execFileSync(browser, [
     '--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
+    '--force-device-scale-factor=1',
+    ...(width ? [`--window-size=${windowSize(width, height ?? 720)}`] : []),
     `--user-data-dir=${join(scratch, 'profile-dom')}`,
     '--virtual-time-budget=2500',
     '--dump-dom',
@@ -254,7 +293,7 @@ const checks = {
  * width, so a grid that no longer fits the window fails the shot instead of
  * quietly shipping a clipped picture.
  */
-async function layoutMetrics(file) {
+async function layoutMetrics(file, width, height) {
   const suffix = Math.random().toString(36).slice(2);
   const probe = join(scratch, `metrics-${suffix}.html`);
   // The probe is a separate file rather than an inline <script>: the settings page
@@ -275,6 +314,10 @@ async function layoutMetrics(file) {
   window.addEventListener('error', (event) => fail(event.message));
   window.addEventListener('unhandledrejection', (event) => fail(event.reason));
   const report = () => {
+    // The panel is paged now, and the heatmap lives on a page that starts
+    // hidden — switch to it, or every box below measures as zero.
+    const records = document.querySelector('[data-page-target="records"]');
+    if (records) records.click();
     const panel = document.querySelector('.panel');
     const scroll = document.querySelector('.heatmap-scroll');
     const grid = document.getElementById('heatmap-grid');
@@ -310,7 +353,7 @@ async function layoutMetrics(file) {
   const html = readFileSync(file, 'utf8')
     .replace('</body>', `  <script src="./probe-${suffix}.js"></script>\n</body>`);
   writeFileSync(probe, html, 'utf8');
-  const dom = settledDom(probe);
+  const dom = settledDom(probe, width, height);
   const match = /<pre id="booloo-metrics">([^<]*)<\/pre>/.exec(dom);
   if (!match) {
     const error = /<pre id="booloo-error">([^<]*)<\/pre>/.exec(dom);
@@ -325,16 +368,16 @@ for (const locale of languages) {
   const suffix = locale === 'en' ? '-en' : '';
 
   const settingsFile = settingsPage(locale);
-  const dom = settledDom(settingsFile);
+  const dom = settledDom(settingsFile, SETTINGS_WIDTH, SETTINGS_HEIGHT);
   for (const text of checks[locale].expect) {
     if (!dom.includes(text)) throw new Error(`settings page did not render "${text}" for ${locale}`);
   }
   for (const text of checks[locale].reject) {
     if (dom.includes(text)) throw new Error(`settings page leaked "${text}" into ${locale}`);
   }
-  // Shot at the window's real width (see build_settings) so the picture shows the
+  // Shot at the window's real size (see build_settings) so the picture shows the
   // layout the app actually opens with.
-  const layout = await layoutMetrics(settingsFile);
+  const layout = await layoutMetrics(settingsFile, SETTINGS_WIDTH, SETTINGS_HEIGHT);
   // The glass has to fill the window: a narrower card leaves a transparent ring
   // around it, which is what "there is an obvious gap at the outermost edge"
   // was about.
@@ -359,9 +402,13 @@ for (const locale of languages) {
     `${layout.heatmapCells} 格 × ${layout.cellSize}px；面板 ${layout.panelWidth}×${layout.panelHeight}` +
     `（窗口 ${layout.pageWidth}，标题栏 ${layout.headerWidth}），` +
     `热力图在 y=${layout.heatmapTop}`);
-  const height = Math.max(560, Math.min(1400, layout.panelHeight + 24));
+  // The panel is exactly one window tall now (the pages scroll inside it), so
+  // the shot is the window, not the panel plus a margin.
+  if (layout.panelHeight !== SETTINGS_HEIGHT) {
+    throw new Error(`the card is ${layout.panelHeight}px tall in a ${SETTINGS_HEIGHT}px window`);
+  }
   console.log(`✓ docs/screenshots/lightweight-settings${suffix}.png (${locale})`,
-    shoot(settingsFile, 820, height, join(OUT, `lightweight-settings${suffix}.png`)));
+    shoot(settingsFile, SETTINGS_WIDTH, SETTINGS_HEIGHT, join(OUT, `lightweight-settings${suffix}.png`)));
 
   console.log(`✓ docs/screenshots/lightweight-pet${suffix}.png (${locale})`,
     shoot(desktopPage(locale), 900, 520, join(OUT, `lightweight-pet${suffix}.png`)));

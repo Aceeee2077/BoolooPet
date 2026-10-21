@@ -11,8 +11,8 @@ screenshots exist once per language — `README.zh-CN.md` uses the plain names,
 | `booloo-promo.gif` | 800×450 | 30-second silent looping Bulu promo, Chinese on-screen text / 布噜 30 秒无声循环宣传片，中文画面文案 | Both READMEs / 中英文 README |
 | `lightweight-pet.png` | 900×520 | The pet on a simulated desktop, zh speech bubble / 桌宠在模拟桌面上，中文气泡 | `README.zh-CN.md` |
 | `lightweight-pet-en.png` | 900×520 | Same desktop, en speech bubble / 同一张桌面，英文气泡 | `README.md` |
-| `lightweight-settings.png` | 764×2236 | The settings panel, zh UI / 设置面板，中文界面 | `README.zh-CN.md` |
-| `lightweight-settings-en.png` | 764×2250 | The settings panel, en UI / 设置面板，英文界面 | `README.md` |
+| `lightweight-settings.png` | 960×720 | The settings panel, zh UI / 设置面板，中文界面 | `README.zh-CN.md` |
+| `lightweight-settings-en.png` | 960×720 | The settings panel, en UI / 设置面板，英文界面 | `README.md` |
 
 ## Regenerating / 如何重新生成
 
@@ -45,9 +45,9 @@ How the pictures are produced / 生成方式：
   genuine screen capture would need a DWM composition pass — the README images are
   illustrations, not captures.
   **桌面图**：模拟桌面（壁纸 + 窗口 + 任务栏 + 桌宠 + 气泡，气泡文案取自词典的 `bubble.greeting`）。
-- The panel height is measured per language instead of hard-coded: the language selector
-  pushed it past the old 780 px, which used to clip the last row.
-  面板高度是按语言实测的，不再写死 —— 加了语言选项后原来的 780px 会把最后一行裁掉。
+- The panel is one window tall (the pages scroll inside it), so the shot is taken at
+  the window's real 960×720 size and asserts the card fills it.
+  面板高度等于一屏（各页在面板内滚动），所以截图按窗口真实尺寸 960×720 拍摄，并断言卡片铺满窗口。
 
 ## Not shipped / 不再推送
 

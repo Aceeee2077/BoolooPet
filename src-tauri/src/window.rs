@@ -746,12 +746,12 @@ fn build_settings(app: &AppHandle, section: Option<String>) -> Result<(), String
     )
     .title("Booloo")
     .decorations(false)
-    // Wide enough for the 53-week click heatmap to show a whole year without a
-    // horizontal scrollbar: the page needs ~660 px for the grid, and the panel
-    // keeps 24 px of padding on each side. The minimum matches, so the grid can
-    // never be squeezed into scrolling.
-    .inner_size(820.0, 700.0)
-    .min_inner_size(720.0, 520.0)
+    // The panel is paged, so the width is what has to carry the widest page:
+    // the 53-week click heatmap (~660 px of grid and padding) plus the 168 px
+    // destination rail and the card's own insets. The minimum keeps the grid
+    // out of a horizontal scrollbar for the same reason.
+    .inner_size(960.0, 720.0)
+    .min_inner_size(900.0, 560.0)
     // Not resizable: Windows keeps a sizing frame on a borderless window that can
     // be resized, and on a transparent one that frame paints as a thin outline
     // around the whole window — the "transparent margin with an obvious edge"

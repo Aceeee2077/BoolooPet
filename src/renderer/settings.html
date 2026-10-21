@@ -25,308 +25,335 @@
       </div>
     </header>
 
-    <section>
-      <h2 data-i18n="lite.settings.general">界面</h2>
-      <div class="setting">
-        <span data-i18n="settings.language">界面语言</span>
-        <div id="language" class="segmented" role="group" data-i18n-label="settings.language" aria-label="界面语言">
-          <span class="segmented-thumb" aria-hidden="true"></span>
-          <button type="button" data-locale="system" aria-pressed="true" data-i18n="settings.localeSystem">跟随系统</button>
-          <button type="button" data-locale="zh" aria-pressed="false" data-i18n="settings.zh">中文</button>
-          <button type="button" data-locale="en" aria-pressed="false" data-i18n="settings.en">English</button>
-        </div>
-      </div>
-    </section>
+    <!-- The panel is paged: a rail of destinations on the left, one page at a
+         time on the right. Every section below stays in the DOM — the scripts
+         look their controls up by id at load — and switching pages only flips
+         `hidden`, so adding a future module means adding a section to a page
+         (or a page to the rail) instead of making the window taller. -->
+    <div class="settings-body">
+      <nav class="side-nav" data-i18n-label="lite.settings.sections" aria-label="设置分类">
+        <button type="button" data-page-target="pet" aria-current="page" data-i18n="lite.nav.pet">桌宠</button>
+        <button type="button" data-page-target="interaction" aria-current="false" data-i18n="lite.nav.interaction">互动</button>
+        <button type="button" data-page-target="records" aria-current="false" data-i18n="lite.nav.records">记录</button>
+        <button type="button" data-page-target="general" aria-current="false" data-i18n="lite.nav.general">通用</button>
+        <button type="button" data-page-target="advanced" aria-current="false" data-i18n="lite.nav.advanced">高级</button>
+      </nav>
 
-    <section>
-      <h1 data-i18n="lite.settings.pets">选择桌宠</h1>
-      <div id="skins" class="skins">
-        <button type="button" data-skin="bulu">🐈<small data-i18n="lite.skin.bulu">布噜</small></button>
-        <button type="button" data-skin="custom">🖼️<small data-i18n="lite.skin.custom">我的图片</small></button>
-      </div>
-      <button id="choose-image" class="primary" type="button" data-i18n="lite.settings.importImage">导入我的图片…</button>
-      <p id="image-status" class="status" role="status"></p>
+      <div class="pages">
+        <div class="page" data-page="pet">
+          <section>
+            <h1 data-i18n="lite.settings.pets">选择桌宠</h1>
+            <div id="skins" class="skins">
+              <button type="button" data-skin="bulu">🐈<small data-i18n="lite.skin.bulu">布噜</small></button>
+              <button type="button" data-skin="custom">🖼️<small data-i18n="lite.skin.custom">我的图片</small></button>
+            </div>
+            <button id="choose-image" class="primary" type="button" data-i18n="lite.settings.importImage">导入我的图片…</button>
+            <p id="image-status" class="status" role="status"></p>
 
-      <h2 data-i18n="lite.pack.title">宠物包</h2>
-      <p class="note" data-i18n="lite.pack.hint"></p>
-      <div id="packs" class="packs"></div>
-      <div class="actions">
-        <button id="import-pack" type="button" data-i18n="lite.pack.import">导入宠物包…</button>
-        <button id="new-pack" type="button" data-i18n="lite.editor.new">新建宠物包…</button>
-      </div>
-      <p id="pack-status" class="status" role="status"></p>
-      <!-- The pack editor is folded away: the list above stays the everyday
-           surface, and this form only opens when a card asks for it ("Edit…")
-           or the "New pet pack…" button does. Its script is lite-pack-editor.js. -->
-      <details id="pack-editor" class="advanced editor" hidden>
-        <summary data-i18n="lite.editor.title">编辑宠物包</summary>
-        <div class="editor-meta">
-          <label class="editor-field"><span data-i18n="lite.editor.name">名字</span><input id="editor-name" type="text" maxlength="60" /></label>
-          <label class="editor-field"><span data-i18n="lite.editor.id">ID（文件夹名）</span><input id="editor-id" type="text" maxlength="60" /></label>
-          <label class="editor-field"><span data-i18n="lite.editor.author">作者</span><input id="editor-author" type="text" maxlength="60" /></label>
-          <label class="editor-field"><span data-i18n="lite.editor.version">版本</span><input id="editor-version" type="text" maxlength="24" /></label>
-          <label class="editor-field editor-wide"><span data-i18n="lite.editor.description">描述</span><textarea id="editor-description" rows="2" maxlength="240"></textarea></label>
-        </div>
-        <div class="editor-body">
-          <div class="editor-sheet">
+            <h2 data-i18n="lite.pack.title">宠物包</h2>
+            <p class="note" data-i18n="lite.pack.hint"></p>
+            <div id="packs" class="packs"></div>
             <div class="actions">
-              <button id="editor-pick" type="button" data-i18n="lite.editor.pickSheet">选择精灵图…</button>
-              <span id="editor-sheet-info" class="note"></span>
+              <button id="import-pack" type="button" data-i18n="lite.pack.import">导入宠物包…</button>
+              <button id="new-pack" type="button" data-i18n="lite.editor.new">新建宠物包…</button>
             </div>
-            <canvas id="editor-canvas" width="360" height="280"></canvas>
-            <p class="note" data-i18n="lite.editor.framesHint">点击左边的格子把这一帧加进当前动画。</p>
-            <div class="editor-grid-inputs">
-              <label class="editor-field"><span data-i18n="lite.editor.frameWidth">帧宽</span><input id="editor-frame-width" type="number" min="1" step="1" /></label>
-              <label class="editor-field"><span data-i18n="lite.editor.frameHeight">帧高</span><input id="editor-frame-height" type="number" min="1" step="1" /></label>
-              <label class="editor-field"><span data-i18n="lite.editor.columns">列数</span><input id="editor-columns" type="number" min="1" step="1" /></label>
-              <label class="editor-field"><span data-i18n="lite.editor.rows">行数</span><input id="editor-rows" type="number" min="1" step="1" /></label>
-              <label class="editor-field"><span data-i18n="lite.editor.scale">缩放</span><input id="editor-scale" type="number" min="0.1" step="0.1" /></label>
+            <p id="pack-status" class="status" role="status"></p>
+            <!-- The pack editor is folded away: the list above stays the everyday
+                 surface, and this form only opens when a card asks for it ("Edit…")
+                 or the "New pet pack…" button does. Its script is lite-pack-editor.js. -->
+            <details id="pack-editor" class="advanced editor" hidden>
+              <summary data-i18n="lite.editor.title">编辑宠物包</summary>
+              <div class="editor-meta">
+                <label class="editor-field"><span data-i18n="lite.editor.name">名字</span><input id="editor-name" type="text" maxlength="60" /></label>
+                <label class="editor-field"><span data-i18n="lite.editor.id">ID（文件夹名）</span><input id="editor-id" type="text" maxlength="60" /></label>
+                <label class="editor-field"><span data-i18n="lite.editor.author">作者</span><input id="editor-author" type="text" maxlength="60" /></label>
+                <label class="editor-field"><span data-i18n="lite.editor.version">版本</span><input id="editor-version" type="text" maxlength="24" /></label>
+                <label class="editor-field editor-wide"><span data-i18n="lite.editor.description">描述</span><textarea id="editor-description" rows="2" maxlength="240"></textarea></label>
+              </div>
+              <div class="editor-body">
+                <div class="editor-sheet">
+                  <div class="actions">
+                    <button id="editor-pick" type="button" data-i18n="lite.editor.pickSheet">选择精灵图…</button>
+                    <span id="editor-sheet-info" class="note"></span>
+                  </div>
+                  <canvas id="editor-canvas" width="360" height="280"></canvas>
+                  <p class="note" data-i18n="lite.editor.framesHint">点击左边的格子把这一帧加进当前动画。</p>
+                  <div class="editor-grid-inputs">
+                    <label class="editor-field"><span data-i18n="lite.editor.frameWidth">帧宽</span><input id="editor-frame-width" type="number" min="1" step="1" /></label>
+                    <label class="editor-field"><span data-i18n="lite.editor.frameHeight">帧高</span><input id="editor-frame-height" type="number" min="1" step="1" /></label>
+                    <label class="editor-field"><span data-i18n="lite.editor.columns">列数</span><input id="editor-columns" type="number" min="1" step="1" /></label>
+                    <label class="editor-field"><span data-i18n="lite.editor.rows">行数</span><input id="editor-rows" type="number" min="1" step="1" /></label>
+                    <label class="editor-field"><span data-i18n="lite.editor.scale">缩放</span><input id="editor-scale" type="number" min="0.1" step="0.1" /></label>
+                  </div>
+                  <p id="editor-grid-warning" class="note" role="status"></p>
+                </div>
+                <div class="editor-anims">
+                  <label class="editor-field"><span data-i18n="lite.editor.animation">动画</span><select id="editor-anim-select"></select></label>
+                  <div class="editor-anim-new">
+                    <input id="editor-anim-name" type="text" maxlength="40" data-i18n-placeholder="lite.editor.newAnimation" />
+                    <button id="editor-anim-add" type="button" data-i18n="lite.editor.addAnimation">添加动画</button>
+                    <button id="editor-anim-remove" type="button" data-i18n="lite.editor.removeAnimation">删除动画</button>
+                  </div>
+                  <div class="editor-anim-props">
+                    <label class="editor-field"><span data-i18n="lite.editor.fps">帧率</span><input id="editor-anim-fps" type="number" min="1" max="60" step="1" /></label>
+                    <label class="check"><input id="editor-anim-loop" type="checkbox" /><span data-i18n="lite.editor.loop">循环播放</span></label>
+                  </div>
+                  <div id="editor-frames" class="editor-frames"></div>
+                  <div class="actions">
+                    <button id="editor-frame-play" type="button" data-i18n="lite.editor.play">播放</button>
+                    <button id="editor-frames-clear" type="button" data-i18n="lite.editor.clearFrames">清空帧</button>
+                  </div>
+                  <canvas id="editor-preview" width="120" height="120"></canvas>
+                </div>
+              </div>
+              <div class="actions">
+                <button id="editor-save" class="primary" type="button" data-i18n="lite.editor.save">保存宠物包</button>
+                <button id="editor-cancel" type="button" data-i18n="lite.editor.cancel">取消</button>
+              </div>
+              <p id="editor-status" class="status" role="status"></p>
+            </details>
+          </section>
+
+          <section id="import-preview" hidden>
+            <h2 data-i18n="lite.settings.confirmTitle">确认图片</h2>
+            <div class="preview-row">
+              <div><canvas id="original-preview" width="180" height="180"></canvas><small data-i18n="lite.settings.original">原图</small></div>
+              <div><canvas id="result-preview" width="180" height="180"></canvas><small data-i18n="lite.settings.result">桌宠效果</small></div>
             </div>
-            <p id="editor-grid-warning" class="note" role="status"></p>
-          </div>
-          <div class="editor-anims">
-            <label class="editor-field"><span data-i18n="lite.editor.animation">动画</span><select id="editor-anim-select"></select></label>
-            <div class="editor-anim-new">
-              <input id="editor-anim-name" type="text" maxlength="40" data-i18n-placeholder="lite.editor.newAnimation" />
-              <button id="editor-anim-add" type="button" data-i18n="lite.editor.addAnimation">添加动画</button>
-              <button id="editor-anim-remove" type="button" data-i18n="lite.editor.removeAnimation">删除动画</button>
-            </div>
-            <div class="editor-anim-props">
-              <label class="editor-field"><span data-i18n="lite.editor.fps">帧率</span><input id="editor-anim-fps" type="number" min="1" max="60" step="1" /></label>
-              <label class="check"><input id="editor-anim-loop" type="checkbox" /><span data-i18n="lite.editor.loop">循环播放</span></label>
-            </div>
-            <div id="editor-frames" class="editor-frames"></div>
+            <label class="check"><input id="remove-background" type="checkbox" /><span data-i18n="lite.settings.removeBackground">去掉纯色背景</span></label>
+            <p id="preview-note" class="note"></p>
             <div class="actions">
-              <button id="editor-frame-play" type="button" data-i18n="lite.editor.play">播放</button>
-              <button id="editor-frames-clear" type="button" data-i18n="lite.editor.clearFrames">清空帧</button>
+              <button id="confirm-image" class="primary" type="button" data-i18n="lite.settings.useImage">使用这张图片</button>
+              <button id="cancel-image" type="button" data-i18n="lite.settings.cancel">取消</button>
             </div>
-            <canvas id="editor-preview" width="120" height="120"></canvas>
-          </div>
+            <!-- The brush editor is a power tool: still here, just folded away, so the
+                 default path stays "does this look right? then use it". -->
+            <details class="advanced">
+              <summary data-i18n="lite.settings.advanced">高级</summary>
+              <button id="refine-image" type="button" data-i18n="lite.settings.refineCutout">手动微调抠图…</button>
+              <p class="note" data-i18n="lite.settings.refineHint"></p>
+            </details>
+          </section>
+
+          <section>
+            <h2 data-i18n="lite.settings.daily">日常设置</h2>
+            <label class="setting" for="pet-size"><span><span data-i18n="lite.settings.petSize">宠物大小</span> <output id="size-value"></output></span><input id="pet-size" type="range" min="0.75" max="1.5" step="0.05" /></label>
+            <label class="setting" for="opacity"><span><span data-i18n="lite.settings.opacity">透明度</span> <output id="opacity-value"></output></span><input id="opacity" type="range" min="0.5" max="1" step="0.05" /></label>
+            <label class="check"><input id="auto-move" type="checkbox" /><span data-i18n="lite.settings.autoMove">自主走动</span></label>
+            <label class="check"><input id="snap-to-edge" type="checkbox" /><span data-i18n="lite.settings.snapToEdge">贴边吸附</span></label>
+            <p class="note" data-i18n="lite.settings.snapHint"></p>
+            <label class="check"><input id="custom-outline" type="checkbox" /><span data-i18n="lite.settings.customOutline">给图片宠物描一圈白边</span></label>
+            <label class="check"><input id="file-drop-reactions" type="checkbox" /><span data-i18n="lite.settings.fileDrop">拖文件给桌宠时显示互动气泡</span></label>
+            <label class="check"><input id="hourly-chime" type="checkbox" /><span data-i18n="lite.settings.hourlyChime">整点轻报时</span></label>
+            <label class="check"><input id="load-awareness" type="checkbox" /><span data-i18n="lite.settings.loadAwareness">根据电脑状态做反应</span></label>
+            <p class="note" data-i18n="lite.settings.loadHint"></p>
+            <label class="check"><input id="auto-launch" type="checkbox" /><span data-i18n="lite.settings.autoLaunch">开机启动</span></label>
+            <button id="reset-position" type="button" data-i18n="lite.settings.resetPosition">重置桌宠位置</button>
+          </section>
         </div>
-        <div class="actions">
-          <button id="editor-save" class="primary" type="button" data-i18n="lite.editor.save">保存宠物包</button>
-          <button id="editor-cancel" type="button" data-i18n="lite.editor.cancel">取消</button>
+
+        <div class="page" data-page="interaction" hidden>
+          <section id="affinity">
+            <h2 data-i18n="affinity.section">好感度</h2>
+            <div class="affinity-head">
+              <span id="affinity-level" class="affinity-level">陌生</span>
+              <span id="affinity-value" class="affinity-value">0</span>
+            </div>
+            <div class="affinity-bar"><div id="affinity-fill" class="affinity-fill"></div></div>
+            <p id="affinity-next" class="note"></p>
+            <div class="update-grid">
+              <span data-i18n="settings.statsDays">陪伴天数</span><span id="affinity-days" class="value">0</span>
+              <span data-i18n="settings.statsFirstSeen">首次陪伴</span><span id="affinity-first" class="value">—</span>
+              <span data-i18n="settings.statsClicks">点击次数</span><span id="affinity-clicks" class="value">0</span>
+            </div>
+            <p class="note" data-i18n="affinity.hint"></p>
+          </section>
+
+          <section id="care">
+            <h2 data-i18n="lite.care.title">投喂</h2>
+            <p class="note" data-i18n="lite.care.hint"></p>
+            <div class="affinity-bar"><div id="care-fill" class="care-fill"></div></div>
+            <p id="care-status" class="note" role="status"></p>
+            <div id="care-foods" class="care-foods"></div>
+            <p id="care-message" class="status" role="status"></p>
+          </section>
+
+          <section id="health">
+            <h2 data-i18n="lite.health.title">健康计划</h2>
+            <div class="health-row">
+              <label class="check"><input id="stand-reminder" type="checkbox" /><span data-i18n="lite.settings.standReminder">站立提醒</span></label>
+              <div class="reminder-controls">
+                <label for="stand-interval" data-i18n="lite.settings.interval">提醒间隔</label>
+                <select id="stand-interval">
+                  <option value="5" data-i18n="lite.settings.minutes5">5 分钟</option>
+                  <option value="10" data-i18n="lite.settings.minutes10">10 分钟</option>
+                  <option value="20" data-i18n="lite.settings.minutes20">20 分钟</option>
+                  <option value="30" data-i18n="lite.settings.minutes30">30 分钟</option>
+                  <option value="custom" data-i18n="lite.settings.custom">自定义</option>
+                </select>
+                <label id="stand-custom-label" for="stand-custom" hidden><span data-i18n="lite.settings.customMinutes">分钟数</span>
+                  <input id="stand-custom" type="number" min="1" max="240" step="1" value="5" />
+                </label>
+              </div>
+            </div>
+            <p id="stand-status" class="note" role="status"></p>
+            <div class="health-row">
+              <label class="check"><input id="eye-rest" type="checkbox" /><span data-i18n="lite.health.eyeRest">护眼</span></label>
+              <div class="reminder-controls">
+                <select id="eye-interval" class="health-interval"></select>
+                <label id="eye-custom-label" for="eye-custom" hidden><span data-i18n="lite.settings.customMinutes">分钟数</span>
+                  <input id="eye-custom" type="number" min="1" max="240" step="1" value="20" />
+                </label>
+              </div>
+            </div>
+            <div class="health-row">
+              <label class="check"><input id="water" type="checkbox" /><span data-i18n="lite.health.water">喝水</span></label>
+              <div class="reminder-controls">
+                <select id="water-interval" class="health-interval"></select>
+                <label id="water-custom-label" for="water-custom" hidden><span data-i18n="lite.settings.customMinutes">分钟数</span>
+                  <input id="water-custom" type="number" min="1" max="240" step="1" value="45" />
+                </label>
+              </div>
+            </div>
+            <p id="health-status" class="note" role="status"></p>
+            <p class="note" data-i18n="lite.health.hint"></p>
+          </section>
+
+          <section id="reminders">
+            <h2 data-i18n="lite.reminders.title">待办提醒</h2>
+            <div class="reminder-form">
+              <input id="reminder-text" type="text" maxlength="80" data-i18n-placeholder="lite.reminders.placeholder" />
+              <input id="reminder-time" type="time" step="60" data-i18n-label="lite.reminders.time" />
+              <button id="reminder-add" class="primary" type="button" data-i18n="lite.reminders.add">添加提醒</button>
+            </div>
+            <div class="reminder-quick">
+              <button type="button" data-reminder-quick="10" data-i18n="lite.reminders.quick10">10 分钟后</button>
+              <button type="button" data-reminder-quick="30" data-i18n="lite.reminders.quick30">30 分钟后</button>
+              <button type="button" data-reminder-quick="60" data-i18n="lite.reminders.quick60">1 小时后</button>
+            </div>
+            <ul id="reminder-list" class="reminder-list"></ul>
+            <p id="reminder-status" class="status" role="status"></p>
+            <p class="note" data-i18n="lite.reminders.hint"></p>
+          </section>
         </div>
-        <p id="editor-status" class="status" role="status"></p>
-      </details>
-    </section>
 
-    <section id="import-preview" hidden>
-      <h2 data-i18n="lite.settings.confirmTitle">确认图片</h2>
-      <div class="preview-row">
-        <div><canvas id="original-preview" width="180" height="180"></canvas><small data-i18n="lite.settings.original">原图</small></div>
-        <div><canvas id="result-preview" width="180" height="180"></canvas><small data-i18n="lite.settings.result">桌宠效果</small></div>
-      </div>
-      <label class="check"><input id="remove-background" type="checkbox" /><span data-i18n="lite.settings.removeBackground">去掉纯色背景</span></label>
-      <p id="preview-note" class="note"></p>
-      <div class="actions">
-        <button id="confirm-image" class="primary" type="button" data-i18n="lite.settings.useImage">使用这张图片</button>
-        <button id="cancel-image" type="button" data-i18n="lite.settings.cancel">取消</button>
-      </div>
-      <!-- The brush editor is a power tool: still here, just folded away, so the
-           default path stays "does this look right? then use it". -->
-      <details class="advanced">
-        <summary data-i18n="lite.settings.advanced">高级</summary>
-        <button id="refine-image" type="button" data-i18n="lite.settings.refineCutout">手动微调抠图…</button>
-        <p class="note" data-i18n="lite.settings.refineHint"></p>
-      </details>
-    </section>
+        <div class="page" data-page="records" hidden>
+          <section id="heatmap">
+            <h2 data-i18n="lite.heatmap.title">点击热力图</h2>
+            <div class="heatmap-bar">
+              <div class="heatmap-years">
+                <button id="heatmap-prev" type="button" data-i18n-label="lite.heatmap.prevYear" aria-label="上一年">‹</button>
+                <span id="heatmap-year" class="heatmap-year-number">2026</span>
+                <button id="heatmap-next" type="button" data-i18n-label="lite.heatmap.nextYear" aria-label="下一年">›</button>
+              </div>
+              <span id="heatmap-summary" class="note"></span>
+            </div>
+            <div class="heatmap-scroll">
+              <div id="heatmap-grid" class="heatmap-grid" role="img"></div>
+            </div>
+            <div class="heatmap-foot">
+              <span class="heatmap-legend"><span data-i18n="lite.heatmap.less">少</span>
+                <i class="heatmap-cell" data-level="0"></i><i class="heatmap-cell" data-level="1"></i><i class="heatmap-cell" data-level="2"></i><i class="heatmap-cell" data-level="3"></i><i class="heatmap-cell" data-level="4"></i>
+                <span data-i18n="lite.heatmap.more">多</span></span>
+            </div>
+            <p class="note" data-i18n="lite.heatmap.hint"></p>
+          </section>
 
-    <section id="affinity">
-      <h2 data-i18n="affinity.section">好感度</h2>
-      <div class="affinity-head">
-        <span id="affinity-level" class="affinity-level">陌生</span>
-        <span id="affinity-value" class="affinity-value">0</span>
-      </div>
-      <div class="affinity-bar"><div id="affinity-fill" class="affinity-fill"></div></div>
-      <p id="affinity-next" class="note"></p>
-      <div class="update-grid">
-        <span data-i18n="settings.statsDays">陪伴天数</span><span id="affinity-days" class="value">0</span>
-        <span data-i18n="settings.statsFirstSeen">首次陪伴</span><span id="affinity-first" class="value">—</span>
-        <span data-i18n="settings.statsClicks">点击次数</span><span id="affinity-clicks" class="value">0</span>
-      </div>
-      <p class="note" data-i18n="affinity.hint"></p>
-    </section>
+          <section id="summary">
+            <h2 data-i18n="lite.summary.title">本周小结</h2>
+            <p id="summary-range" class="note"></p>
+            <div class="update-grid">
+              <span data-i18n="lite.summary.days">陪伴天数</span><span id="summary-days" class="value">0</span>
+              <span data-i18n="lite.summary.clicks">点击次数</span><span id="summary-clicks" class="value">0</span>
+              <span data-i18n="lite.summary.stand">站立提醒</span><span id="summary-stand" class="value">0</span>
+              <span data-i18n="lite.summary.eye">护眼提醒</span><span id="summary-eye" class="value">0</span>
+              <span data-i18n="lite.summary.water">喝水提醒</span><span id="summary-water" class="value">0</span>
+              <span data-i18n="lite.summary.affinity">本周好感</span><span id="summary-affinity" class="value">+0</span>
+            </div>
+            <p id="summary-line" class="note"></p>
+            <p class="note" data-i18n="lite.summary.hint"></p>
+          </section>
 
-    <section id="care">
-      <h2 data-i18n="lite.care.title">投喂</h2>
-      <p class="note" data-i18n="lite.care.hint"></p>
-      <div class="affinity-bar"><div id="care-fill" class="care-fill"></div></div>
-      <p id="care-status" class="note" role="status"></p>
-      <div id="care-foods" class="care-foods"></div>
-      <p id="care-message" class="status" role="status"></p>
-    </section>
+          <section id="report">
+            <h2 data-i18n="lite.report.title">年度回顾</h2>
+            <p id="report-range" class="note"></p>
+            <div class="update-grid">
+              <span data-i18n="lite.report.days">陪伴天数</span><span id="report-days" class="value">0</span>
+              <span data-i18n="lite.report.clicks">点击次数</span><span id="report-clicks" class="value">0</span>
+              <span data-i18n="lite.report.stand">站立提醒</span><span id="report-stand" class="value">0</span>
+              <span data-i18n="lite.report.eye">护眼提醒</span><span id="report-eye" class="value">0</span>
+              <span data-i18n="lite.report.water">喝水提醒</span><span id="report-water" class="value">0</span>
+              <span data-i18n="lite.report.affinity">全年好感</span><span id="report-affinity" class="value">+0</span>
+            </div>
+            <p id="report-lines" class="note"></p>
+            <p class="note" data-i18n="lite.report.hint"></p>
+          </section>
+        </div>
 
-    <section id="health">
-      <h2 data-i18n="lite.health.title">健康计划</h2>
-      <div class="health-row">
-        <label class="check"><input id="stand-reminder" type="checkbox" /><span data-i18n="lite.settings.standReminder">站立提醒</span></label>
-        <div class="reminder-controls">
-          <label for="stand-interval" data-i18n="lite.settings.interval">提醒间隔</label>
-          <select id="stand-interval">
-            <option value="5" data-i18n="lite.settings.minutes5">5 分钟</option>
-            <option value="10" data-i18n="lite.settings.minutes10">10 分钟</option>
-            <option value="20" data-i18n="lite.settings.minutes20">20 分钟</option>
-            <option value="30" data-i18n="lite.settings.minutes30">30 分钟</option>
-            <option value="custom" data-i18n="lite.settings.custom">自定义</option>
-          </select>
-          <label id="stand-custom-label" for="stand-custom" hidden><span data-i18n="lite.settings.customMinutes">分钟数</span>
-            <input id="stand-custom" type="number" min="1" max="240" step="1" value="5" />
-          </label>
+        <div class="page" data-page="general" hidden>
+          <section>
+            <h2 data-i18n="lite.settings.general">界面</h2>
+            <div class="setting">
+              <span data-i18n="settings.language">界面语言</span>
+              <div id="language" class="segmented" role="group" data-i18n-label="settings.language" aria-label="界面语言">
+                <span class="segmented-thumb" aria-hidden="true"></span>
+                <button type="button" data-locale="system" aria-pressed="true" data-i18n="settings.localeSystem">跟随系统</button>
+                <button type="button" data-locale="zh" aria-pressed="false" data-i18n="settings.zh">中文</button>
+                <button type="button" data-locale="en" aria-pressed="false" data-i18n="settings.en">English</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="update-panel">
+            <h2 data-i18n="settings.updateSection">🔄 更新</h2>
+            <div class="update-grid">
+              <span data-i18n="settings.updateVersion">当前版本</span><span id="update-version" class="value">—</span>
+              <span data-i18n="settings.updateStatus">状态</span><span id="update-status" class="value">—</span>
+              <span data-i18n="settings.updateLastCheck">上次检查</span><span id="update-last-check" class="value">—</span>
+            </div>
+            <p id="update-offline" class="note" data-i18n="settings.updateStale" hidden></p>
+            <div id="update-progress-row" class="update-progress" hidden>
+              <div class="progress"><div id="update-progress-bar" class="progress-fill"></div></div>
+              <span id="update-progress-text" class="val">0%</span>
+            </div>
+            <div class="actions">
+              <button id="btn-check-update" type="button" data-i18n="settings.checkUpdate">🔍 立即检查更新</button>
+              <button id="btn-download-update" type="button" hidden data-i18n="settings.downloadUpdate">⬇️ 下载更新</button>
+              <button id="btn-install-update" class="primary" type="button" hidden data-i18n="settings.restartUpdate">🔄 立即重启更新</button>
+            </div>
+            <label class="check"><input id="update-auto-check" type="checkbox" /><span data-i18n="settings.updateAutoCheck">启动时检查更新</span></label>
+            <label class="check"><input id="update-auto-download" type="checkbox" /><span data-i18n="settings.updateAutoDownload">自动下载新版本</span></label>
+            <div id="update-notes-box" hidden>
+              <h3 data-i18n="settings.updateNotes">更新日志</h3>
+              <pre id="update-notes"></pre>
+            </div>
+            <p id="update-manual" class="note" hidden></p>
+          </section>
+        </div>
+
+        <div class="page" data-page="advanced" hidden>
+          <section id="diagnostics">
+            <h2 data-i18n="lite.diag.title">🩺 诊断</h2>
+            <p class="note" data-i18n="lite.diag.hint">遇到问题时，可以把本地日志打包发给开发者。</p>
+            <div class="actions">
+              <button id="export-diagnostics" type="button" data-i18n="lite.diag.export">📦 导出诊断信息</button>
+              <button id="reveal-log" type="button" data-i18n="lite.diag.reveal">📂 打开日志</button>
+            </div>
+            <p id="diag-status" class="status" role="status"></p>
+          </section>
+
+          <section id="backup">
+            <h2 data-i18n="lite.backup.title">数据备份</h2>
+            <p class="note" data-i18n="lite.backup.hint"></p>
+            <div class="actions">
+              <button id="backup-export" type="button" data-i18n="lite.backup.export">导出备份</button>
+              <button id="backup-import" type="button" data-i18n="lite.backup.import">从备份恢复</button>
+            </div>
+            <p id="backup-status" class="status" role="status"></p>
+          </section>
         </div>
       </div>
-      <p id="stand-status" class="note" role="status"></p>
-      <div class="health-row">
-        <label class="check"><input id="eye-rest" type="checkbox" /><span data-i18n="lite.health.eyeRest">护眼</span></label>
-        <div class="reminder-controls">
-          <select id="eye-interval" class="health-interval"></select>
-          <label id="eye-custom-label" for="eye-custom" hidden><span data-i18n="lite.settings.customMinutes">分钟数</span>
-            <input id="eye-custom" type="number" min="1" max="240" step="1" value="20" />
-          </label>
-        </div>
-      </div>
-      <div class="health-row">
-        <label class="check"><input id="water" type="checkbox" /><span data-i18n="lite.health.water">喝水</span></label>
-        <div class="reminder-controls">
-          <select id="water-interval" class="health-interval"></select>
-          <label id="water-custom-label" for="water-custom" hidden><span data-i18n="lite.settings.customMinutes">分钟数</span>
-            <input id="water-custom" type="number" min="1" max="240" step="1" value="45" />
-          </label>
-        </div>
-      </div>
-      <p id="health-status" class="note" role="status"></p>
-      <p class="note" data-i18n="lite.health.hint"></p>
-    </section>
-
-    <section id="heatmap">
-      <h2 data-i18n="lite.heatmap.title">点击热力图</h2>
-      <div class="heatmap-bar">
-        <div class="heatmap-years">
-          <button id="heatmap-prev" type="button" data-i18n-label="lite.heatmap.prevYear" aria-label="上一年">‹</button>
-          <span id="heatmap-year" class="heatmap-year-number">2026</span>
-          <button id="heatmap-next" type="button" data-i18n-label="lite.heatmap.nextYear" aria-label="下一年">›</button>
-        </div>
-        <span id="heatmap-summary" class="note"></span>
-      </div>
-      <div class="heatmap-scroll">
-        <div id="heatmap-grid" class="heatmap-grid" role="img"></div>
-      </div>
-      <div class="heatmap-foot">
-        <span class="heatmap-legend"><span data-i18n="lite.heatmap.less">少</span>
-          <i class="heatmap-cell" data-level="0"></i><i class="heatmap-cell" data-level="1"></i><i class="heatmap-cell" data-level="2"></i><i class="heatmap-cell" data-level="3"></i><i class="heatmap-cell" data-level="4"></i>
-          <span data-i18n="lite.heatmap.more">多</span></span>
-      </div>
-      <p class="note" data-i18n="lite.heatmap.hint"></p>
-    </section>
-
-    <section id="summary">
-      <h2 data-i18n="lite.summary.title">本周小结</h2>
-      <p id="summary-range" class="note"></p>
-      <div class="update-grid">
-        <span data-i18n="lite.summary.days">陪伴天数</span><span id="summary-days" class="value">0</span>
-        <span data-i18n="lite.summary.clicks">点击次数</span><span id="summary-clicks" class="value">0</span>
-        <span data-i18n="lite.summary.stand">站立提醒</span><span id="summary-stand" class="value">0</span>
-        <span data-i18n="lite.summary.eye">护眼提醒</span><span id="summary-eye" class="value">0</span>
-        <span data-i18n="lite.summary.water">喝水提醒</span><span id="summary-water" class="value">0</span>
-        <span data-i18n="lite.summary.affinity">本周好感</span><span id="summary-affinity" class="value">+0</span>
-      </div>
-      <p id="summary-line" class="note"></p>
-      <p class="note" data-i18n="lite.summary.hint"></p>
-    </section>
-
-    <section id="report">
-      <h2 data-i18n="lite.report.title">年度回顾</h2>
-      <p id="report-range" class="note"></p>
-      <div class="update-grid">
-        <span data-i18n="lite.report.days">陪伴天数</span><span id="report-days" class="value">0</span>
-        <span data-i18n="lite.report.clicks">点击次数</span><span id="report-clicks" class="value">0</span>
-        <span data-i18n="lite.report.stand">站立提醒</span><span id="report-stand" class="value">0</span>
-        <span data-i18n="lite.report.eye">护眼提醒</span><span id="report-eye" class="value">0</span>
-        <span data-i18n="lite.report.water">喝水提醒</span><span id="report-water" class="value">0</span>
-        <span data-i18n="lite.report.affinity">全年好感</span><span id="report-affinity" class="value">+0</span>
-      </div>
-      <p id="report-lines" class="note"></p>
-      <p class="note" data-i18n="lite.report.hint"></p>
-    </section>
-
-    <section id="reminders">
-      <h2 data-i18n="lite.reminders.title">待办提醒</h2>
-      <div class="reminder-form">
-        <input id="reminder-text" type="text" maxlength="80" data-i18n-placeholder="lite.reminders.placeholder" />
-        <input id="reminder-time" type="time" step="60" data-i18n-label="lite.reminders.time" />
-        <button id="reminder-add" class="primary" type="button" data-i18n="lite.reminders.add">添加提醒</button>
-      </div>
-      <div class="reminder-quick">
-        <button type="button" data-reminder-quick="10" data-i18n="lite.reminders.quick10">10 分钟后</button>
-        <button type="button" data-reminder-quick="30" data-i18n="lite.reminders.quick30">30 分钟后</button>
-        <button type="button" data-reminder-quick="60" data-i18n="lite.reminders.quick60">1 小时后</button>
-      </div>
-      <ul id="reminder-list" class="reminder-list"></ul>
-      <p id="reminder-status" class="status" role="status"></p>
-      <p class="note" data-i18n="lite.reminders.hint"></p>
-    </section>
-
-    <section>
-      <h2 data-i18n="lite.settings.daily">日常设置</h2>
-      <label class="setting" for="pet-size"><span><span data-i18n="lite.settings.petSize">宠物大小</span> <output id="size-value"></output></span><input id="pet-size" type="range" min="0.75" max="1.5" step="0.05" /></label>
-      <label class="setting" for="opacity"><span><span data-i18n="lite.settings.opacity">透明度</span> <output id="opacity-value"></output></span><input id="opacity" type="range" min="0.5" max="1" step="0.05" /></label>
-      <label class="check"><input id="auto-move" type="checkbox" /><span data-i18n="lite.settings.autoMove">自主走动</span></label>
-      <label class="check"><input id="snap-to-edge" type="checkbox" /><span data-i18n="lite.settings.snapToEdge">贴边吸附</span></label>
-      <p class="note" data-i18n="lite.settings.snapHint"></p>
-      <label class="check"><input id="custom-outline" type="checkbox" /><span data-i18n="lite.settings.customOutline">给图片宠物描一圈白边</span></label>
-      <label class="check"><input id="file-drop-reactions" type="checkbox" /><span data-i18n="lite.settings.fileDrop">拖文件给桌宠时显示互动气泡</span></label>
-      <label class="check"><input id="hourly-chime" type="checkbox" /><span data-i18n="lite.settings.hourlyChime">整点轻报时</span></label>
-      <label class="check"><input id="load-awareness" type="checkbox" /><span data-i18n="lite.settings.loadAwareness">根据电脑状态做反应</span></label>
-      <p class="note" data-i18n="lite.settings.loadHint"></p>
-      <label class="check"><input id="auto-launch" type="checkbox" /><span data-i18n="lite.settings.autoLaunch">开机启动</span></label>
-      <button id="reset-position" type="button" data-i18n="lite.settings.resetPosition">重置桌宠位置</button>
-    </section>
-
-    <section id="update-panel">
-      <h2 data-i18n="settings.updateSection">🔄 更新</h2>
-      <div class="update-grid">
-        <span data-i18n="settings.updateVersion">当前版本</span><span id="update-version" class="value">—</span>
-        <span data-i18n="settings.updateStatus">状态</span><span id="update-status" class="value">—</span>
-        <span data-i18n="settings.updateLastCheck">上次检查</span><span id="update-last-check" class="value">—</span>
-      </div>
-      <p id="update-offline" class="note" data-i18n="settings.updateStale" hidden></p>
-      <div id="update-progress-row" class="update-progress" hidden>
-        <div class="progress"><div id="update-progress-bar" class="progress-fill"></div></div>
-        <span id="update-progress-text" class="val">0%</span>
-      </div>
-      <div class="actions">
-        <button id="btn-check-update" type="button" data-i18n="settings.checkUpdate">🔍 立即检查更新</button>
-        <button id="btn-download-update" type="button" hidden data-i18n="settings.downloadUpdate">⬇️ 下载更新</button>
-        <button id="btn-install-update" class="primary" type="button" hidden data-i18n="settings.restartUpdate">🔄 立即重启更新</button>
-      </div>
-      <label class="check"><input id="update-auto-check" type="checkbox" /><span data-i18n="settings.updateAutoCheck">启动时检查更新</span></label>
-      <label class="check"><input id="update-auto-download" type="checkbox" /><span data-i18n="settings.updateAutoDownload">自动下载新版本</span></label>
-      <div id="update-notes-box" hidden>
-        <h3 data-i18n="settings.updateNotes">更新日志</h3>
-        <pre id="update-notes"></pre>
-      </div>
-      <p id="update-manual" class="note" hidden></p>
-    </section>
-
-    <section id="diagnostics">
-      <h2 data-i18n="lite.diag.title">🩺 诊断</h2>
-      <p class="note" data-i18n="lite.diag.hint">遇到问题时，可以把本地日志打包发给开发者。</p>
-      <div class="actions">
-        <button id="export-diagnostics" type="button" data-i18n="lite.diag.export">📦 导出诊断信息</button>
-        <button id="reveal-log" type="button" data-i18n="lite.diag.reveal">📂 打开日志</button>
-      </div>
-      <p id="diag-status" class="status" role="status"></p>
-    </section>
-
-    <section id="backup">
-      <h2 data-i18n="lite.backup.title">数据备份</h2>
-      <p class="note" data-i18n="lite.backup.hint"></p>
-      <div class="actions">
-        <button id="backup-export" type="button" data-i18n="lite.backup.export">导出备份</button>
-        <button id="backup-import" type="button" data-i18n="lite.backup.import">从备份恢复</button>
-      </div>
-      <p id="backup-status" class="status" role="status"></p>
-    </section>
+    </div>
   </main>
   <script src="./lite-i18n.js"></script>
   <script src="./lite-day.js"></script>
