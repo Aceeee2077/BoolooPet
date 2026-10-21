@@ -42,10 +42,20 @@ body { margin: 0; }
   to { background-position: 34% 62%, 68% 12%, 0 0; }
 }
 @media (prefers-reduced-motion: reduce) { .panel { animation: none; } }
-header { position: sticky; top: 0; z-index: 10; height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 24px; border-bottom: 1px solid #efdacbcc; border-radius: 20px 20px 0 0; background: #fff8f2e0; backdrop-filter: blur(10px) saturate(130%); user-select: none; }
+header { position: sticky; top: 0; z-index: 10; height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 24px; border-bottom: 1px solid #efdacbcc; border-radius: 20px 20px 0 0; background: #fff8f2e0; backdrop-filter: blur(10px) saturate(130%); user-select: none; }
 header div { display: flex; gap: 12px; align-items: baseline; }
+.brand { flex: 0 0 auto; white-space: nowrap; }
 header strong { font-size: 17px; }
 header span { color: #9a7660; font-size: 12px; }
+/* The star invitation sits between the brand and the window buttons: one soft
+   pill the whole width of what is left, so the sentence never has to clip on a
+   narrow window — it wraps inside the pill instead. It is a button because the
+   whole line is the link. */
+.star-invite { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 16px; border: 1px solid #f3d6bf; border-radius: 12px; background: #fff1e4cc; color: #7d5a44; font-size: 12px; line-height: 1.45; text-align: left; cursor: pointer; transition: background .2s ease, border-color .2s ease, color .2s ease; }
+.star-invite:hover, .star-invite:focus-visible { border-color: #ea773b; background: #ffe3cd; color: #8a4a24; outline: none; }
+.star-invite .star-icon { flex: 0 0 auto; font-size: 14px; line-height: 1; transition: transform .2s ease; }
+.star-invite:hover .star-icon, .star-invite:focus-visible .star-icon { transform: scale(1.2) rotate(-8deg); }
+.star-invite > span:last-child { min-width: 0; color: inherit; }
 .header-actions { display: flex; gap: 4px; align-items: center; }
 /* The GitHub button: the icon lifts and turns blue on hover and a label fades in
    above it. Ported from a Uiverse snippet that was written for Tailwind — this
@@ -94,6 +104,20 @@ header button { border: 0; background: transparent; }
 .setting span { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .setting input { display: block; width: 100%; accent-color: #ea773b; }
 .setting select { display: block; width: 100%; font: inherit; color: inherit; padding: 5px 8px; border: 1px solid #e9cbb6; border-radius: 8px; background: #ffffffd4; }
+/* Language: a segmented control rather than a <select>, because the chosen
+   option should read as one chip sliding between slots. The thumb is a single
+   absolutely positioned chip; --lang-index (set by lite-settings.ts) is the only
+   thing that moves, and the transform transition does the animating. */
+.segmented { --lang-index: 0; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; width: min(100%, 340px); padding: 4px; border: 1px solid #e9cbb6; border-radius: 10px; background: #f6e7dba8; }
+.segmented > .segmented-thumb { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3); margin: 0; border-radius: 7px; background: #fffdfb; box-shadow: 0 1px 3px #a65a3726, 0 0 0 1px #e9cbb680; transform: translateX(calc(var(--lang-index) * (100% + 4px))); pointer-events: none; }
+/* Only slides once the page has painted the stored language (`is-live`): the
+   first placement is a jump into position, not an animation from slot zero. */
+.segmented.is-live > .segmented-thumb { transition: transform .32s cubic-bezier(.34, 1.28, .5, 1); }
+.segmented > button { position: relative; z-index: 1; padding: 5px 4px; border: 0; border-radius: 7px; background: transparent; color: #9a7660; font: inherit; font-size: 12px; cursor: pointer; transition: color .2s ease; }
+.segmented > button:hover { background: transparent; color: #8a4a24; }
+.segmented > button[aria-pressed="true"] { color: #8a4a24; font-weight: 600; }
+.segmented > button:focus-visible { outline: 2px solid #ea773b; outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .segmented.is-live > .segmented-thumb { transition: none; } }
 .check { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 8px; margin: 14px 0; }
 .check input { accent-color: #ea773b; width: 17px; height: 17px; }
 .reminder-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 2px 25px; font-size: 13px; }

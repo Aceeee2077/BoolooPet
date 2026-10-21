@@ -39,7 +39,10 @@ let pendingCheck = null;
 
 function makeElement(id) {
   const element = {
-    id, value: '', checked: false, disabled: false, hidden: false, title: '', style: {},
+    id, value: '', checked: false, disabled: false, hidden: false, title: '',
+    // The language chips are positioned by a custom property, so the stub has to
+    // accept setProperty the way a real style declaration does.
+    style: { setProperty(name, value) { this[name] = value; } },
     dataset: {}, attributes: {},
     focus() { this.focused = true; }, select() { this.selected = true; },
     append(...nodes) { this.children = (this.children || []).concat(nodes); },

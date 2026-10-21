@@ -9,7 +9,10 @@
   const cutout = $<HTMLInputElement>('remove-background');
   const confirm = $<HTMLButtonElement>('confirm-image');
   const refine = $<HTMLButtonElement>('refine-image');
-  const language = $<HTMLSelectElement>('language');
+  const language = $<HTMLElement>('language');
+  const languageButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('#language button[data-locale]'));
+  /** The order of the chips; also the slot index the thumb slides to. */
+  const LOCALE_ORDER: LocalePreference[] = ['system', 'zh', 'en'];
   const size = $<HTMLInputElement>('pet-size');
   const opacity = $<HTMLInputElement>('opacity');
   const autoMove = $<HTMLInputElement>('auto-move');
@@ -842,12 +845,25 @@
     return standReminder.checked ? liteT('lite.reminder.on', { n: minutes }) : liteT('lite.reminder.off');
   }
 
+  /**
+   * Point the language chips at `preference`: the CSS thumb slides to that slot
+   * and the pressed state follows. Called on every paint too, so a config coming
+   * back from elsewhere lands on the same chip.
+   */
+  function paintLanguage(preference: LocalePreference) {
+    const index = Math.max(0, LOCALE_ORDER.indexOf(preference));
+    language.style.setProperty('--lang-index', String(index));
+    for (const button of languageButtons) {
+      button.setAttribute('aria-pressed', button.dataset.locale === preference ? 'true' : 'false');
+    }
+  }
+
   function paint(cfg: AppConfig) {
     // A language switch replaces the dictionary asynchronously, so the strings
     // built from it are refreshed by one more paint once it has arrived.
     const localeChanged = !!current && current.locale !== cfg.locale;
     current = cfg;
-    language.value = cfg.locale === 'en' ? 'en' : 'zh';
+    paintLanguage(cfg.locale);
     for (const button of Array.from(document.querySelectorAll<HTMLButtonElement>('#skins button'))) {
       button.classList.toggle('active', button.dataset.skin === cfg.skin);
     }
@@ -915,6 +931,8 @@
   // The title bar's GitHub button: the address lives in the Rust side, so this
   // only has to say "open it".
   $<HTMLButtonElement>('open-github').addEventListener('click', () => window.api.openProjectPage());
+  // The star invitation in the title bar is the same link, worded as a favour.
+  $<HTMLButtonElement>('star-invite').addEventListener('click', () => window.api.openProjectPage());
   $<HTMLButtonElement>('choose-image').addEventListener('click', () => void chooseImage());
   $<HTMLButtonElement>('cancel-image').addEventListener('click', () => void cancelImage());
   // The mask editor is a separate window; it reports back through the config
@@ -996,7 +1014,16 @@
   size.addEventListener('change', () => void window.api.setConfig({ petScale: Number(size.value) }));
   opacity.addEventListener('input', () => { $<HTMLOutputElement>('opacity-value').textContent = `${Math.round(Number(opacity.value) * 100)}%`; });
   opacity.addEventListener('change', () => void window.api.setConfig({ opacity: Number(opacity.value) }));
-  language.addEventListener('change', () => void window.api.setConfig({ locale: language.value === 'en' ? 'en' : 'zh' }));
+  // The thumb starts moving on the click itself; the new dictionary arrives with
+  // the config broadcast, so the slide and the relabelling overlap instead of the
+  // control snapping back and forth.
+  for (const button of languageButtons) {
+    button.addEventListener('click', () => {
+      const preference = button.dataset.locale as LocalePreference;
+      paintLanguage(preference);
+      void window.api.setConfig({ locale: preference });
+    });
+  }
   autoMove.addEventListener('change', () => void window.api.setConfig({ autoMove: autoMove.checked }));
   snapToEdge.addEventListener('change', () => void window.api.setConfig({ snapToEdge: snapToEdge.checked }));
   customOutline.addEventListener('change', () => void window.api.setConfig({ customOutline: customOutline.checked }));
@@ -1145,6 +1172,8 @@
     await liteLoadDictionary().catch((error) => console.error('[lite-settings] i18n:', error));
     const [cfg, enabled] = await Promise.all([window.api.getConfig(), window.api.autoLaunchGet()]);
     paint(cfg);
+    // The stored language is in place now, so later changes may animate.
+    language.classList.add('is-live');
     // A sensible starting point for the time box: ten minutes from now.
     reminderTime.value = timeValue(new Date(Date.now() + 10 * 60_000));
     renderUpdate(await window.api.updateGetState());

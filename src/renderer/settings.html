@@ -9,7 +9,11 @@
 <body>
   <main class="panel">
     <header data-tauri-drag-region>
-      <div data-tauri-drag-region><strong>🐾 Booloo</strong><span data-i18n="lite.settings.subtitle">轻量桌宠</span></div>
+      <div class="brand" data-tauri-drag-region><strong>🐾 Booloo</strong><span data-i18n="lite.settings.subtitle">轻量桌宠</span></div>
+      <button id="star-invite" class="star-invite" type="button" data-i18n-label="lite.settings.starLabel" aria-label="去 GitHub 点个 Star">
+        <span class="star-icon" aria-hidden="true">⭐</span>
+        <span data-i18n="lite.settings.star">如果喜欢 Booloo 这款桌宠，可以帮我去 GitHub 点个 Star 哦 : )</span>
+      </button>
       <div class="header-actions">
         <div class="gh">
           <button id="open-github" type="button" data-i18n-label="lite.settings.github" aria-label="打开 GitHub 仓库">
@@ -23,13 +27,15 @@
 
     <section>
       <h2 data-i18n="lite.settings.general">界面</h2>
-      <label class="setting" for="language">
+      <div class="setting">
         <span data-i18n="settings.language">界面语言</span>
-        <select id="language">
-          <option value="zh" data-i18n="settings.zh">中文</option>
-          <option value="en" data-i18n="settings.en">English</option>
-        </select>
-      </label>
+        <div id="language" class="segmented" role="group" data-i18n-label="settings.language" aria-label="界面语言">
+          <span class="segmented-thumb" aria-hidden="true"></span>
+          <button type="button" data-locale="system" aria-pressed="true" data-i18n="settings.localeSystem">跟随系统</button>
+          <button type="button" data-locale="zh" aria-pressed="false" data-i18n="settings.zh">中文</button>
+          <button type="button" data-locale="en" aria-pressed="false" data-i18n="settings.en">English</button>
+        </div>
+      </div>
     </section>
 
     <section>

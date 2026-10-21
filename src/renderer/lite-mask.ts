@@ -672,15 +672,20 @@
   void (async () => {
     // Translate before the first paint so no key is ever painted on screen.
     await liteLoadDictionary().catch((error) => console.error('[lite-mask] i18n:', error));
-    let locale = liteCurrentLocale();
+    // The dictionary already carries the locale `system` resolved to, so only the
+    // raw config value can tell whether the preference itself changed.
+    let localePreference: LocalePreference = await window.api
+      .getConfig()
+      .then((cfg) => cfg.locale)
+      .catch((): LocalePreference => 'system');
     updateReadouts();
     setTool('erase');
     updateButtons();
     updateNote();
     window.api.onMaskReload(() => void refresh(true));
     window.api.onConfigChanged((cfg) => {
-      if (cfg.locale === locale) return;
-      locale = cfg.locale;
+      if (cfg.locale === localePreference) return;
+      localePreference = cfg.locale;
       void liteLoadDictionary().then(updateNote).catch((error) => console.error('[lite-mask] i18n:', error));
     });
     await refresh(true);

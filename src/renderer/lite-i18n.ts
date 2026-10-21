@@ -7,7 +7,9 @@
 // The dictionary itself stays in src/shared/i18n.ts: the Rust side embeds it
 // (src-tauri/src/i18n.rs) and hands it over through the `i18n_get` command, so
 // there is exactly one place where strings live. The active locale is
-// config.locale; switching it re-fetches here.
+// config.locale, except that the backend first resolves the `system`
+// preference against the OS language; the renderer only ever sees the result,
+// and switching it re-fetches here.
 // ============================================================================
 
 type LiteTranslateParams = Record<string, string | number>;

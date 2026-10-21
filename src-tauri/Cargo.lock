@@ -314,7 +314,7 @@ dependencies = [
 
 [[package]]
 name = "booloo"
-version = "0.6.23"
+version = "0.6.24"
 dependencies = [
  "auto-launch",
  "base64 0.22.1",

@@ -21,6 +21,13 @@ type PetSkin = 'bulu' | 'custom' | 'pack';
 /** UI language */
 type Locale = 'zh' | 'en';
 
+/**
+ * The stored language setting: a concrete locale, or `system` to follow the OS
+ * language. The backend resolves `system` before handing a dictionary over, so
+ * everything the renderer renders is always a concrete Locale.
+ */
+type LocalePreference = Locale | 'system';
+
 /** Software update release channel */
 type UpdateChannel = 'stable' | 'prerelease';
 
@@ -387,8 +394,8 @@ interface AppConfig {
   cutoutTolerance: number;
   /** Trace the imported picture with a white silhouette (see lite-app.ts). */
   customOutline?: boolean;
-  /** UI language */
-  locale: Locale;
+  /** UI language preference (`system` follows the OS language) */
+  locale: LocalePreference;
   /**
    * Wardrobe: what the pet is wearing, one accessory id per slot
    * (`effects` is a list — see src/shared/accessory-types.ts). Persisted here so

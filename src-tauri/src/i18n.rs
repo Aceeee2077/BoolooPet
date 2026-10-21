@@ -20,26 +20,84 @@ fn dictionaries() -> &'static Value {
 }
 
 /// Look up one string for the given locale (used by the tray and native dialogs).
+///
+/// `locale` is the stored preference and may be `system`; it is resolved first,
+/// so every caller can pass its config value without thinking about it.
 pub fn translate(locale: &str, key: &str) -> String {
+    let locale = resolve(locale);
     dictionaries()
-        .get(locale)
+        .get(&locale)
         .and_then(|dict| dict.get(key))
         .and_then(|value| value.as_str())
         .unwrap_or(key)
         .to_string()
 }
 
+/// Turn the stored language preference into a locale the dictionaries ship.
+///
+/// Settings stores either a concrete locale or `system`, which follows the OS UI
+/// language. Only Chinese and English ship, so anything non-Chinese resolves to
+/// English rather than falling back to a dictionary that does not exist.
+pub fn resolve(preference: &str) -> String {
+    match preference {
+        "en" => "en".to_string(),
+        "zh" => "zh".to_string(),
+        _ => system_locale().unwrap_or_else(|| "zh".to_string()),
+    }
+}
+
+/// The OS UI language, as a dictionary key.
+#[cfg(windows)]
+fn system_locale() -> Option<String> {
+    // GetUserDefaultUILanguage returns a LANGID whose low 10 bits are the primary
+    // language: 0x04 is Chinese (Simplified and Traditional both), everything
+    // else this app ships resolves to English. Declared by hand because adding
+    // windows-sys for a single call would pull a whole binding crate in.
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetUserDefaultUILanguage() -> u16;
+    }
+    let primary = unsafe { GetUserDefaultUILanguage() } & 0x3ff;
+    Some(if primary == 0x04 { "zh" } else { "en" }.to_string())
+}
+
+/// The OS UI language on Unix, read from the usual locale environment variables.
+///
+/// macOS does not export these to apps launched from Finder, so a Mac without
+/// them resolves to English — the platform default there.
+#[cfg(not(windows))]
+fn system_locale() -> Option<String> {
+    for key in ["LC_ALL", "LC_MESSAGES", "LANG"] {
+        let Ok(value) = std::env::var(key) else {
+            continue;
+        };
+        if value.is_empty() {
+            continue;
+        }
+        // "zh_CN.UTF-8" / "zh-Hans" / "en_US" → "zh" / "en".
+        let language = value.split(['.', '_', '-', '@']).next().unwrap_or_default();
+        return Some(if language.eq_ignore_ascii_case("zh") {
+            "zh".to_string()
+        } else {
+            "en".to_string()
+        });
+    }
+    None
+}
+
 /// The active locale plus its dictionary, for the renderer's own i18n runtime.
 ///
 /// The lite pages translate themselves (src/renderer/lite-i18n.ts) rather than
 /// receiving pre-translated strings, so switching the language is a single
-/// `config_set` and the pages re-fetch this.
+/// `config_set` and the pages re-fetch this. `locale` is the *resolved* language,
+/// not the stored preference: the pages only ever need the dictionary's locale.
 #[tauri::command]
 pub fn i18n_get(app: AppHandle) -> Value {
-    let locale = app
+    let preference = app
         .try_state::<ConfigState>()
         .and_then(|state| state.get("locale").as_str().map(str::to_string))
         .unwrap_or_else(|| "zh".to_string());
+    let locale = resolve(&preference);
     let dict = dictionaries()
         .get(&locale)
         .cloned()
@@ -87,5 +145,16 @@ mod tests {
         let zh = dicts.get("zh").expect("zh dictionary");
         let en = dicts.get("en").expect("en dictionary");
         assert_eq!(sorted_keys(zh), sorted_keys(en));
+    }
+
+    /// `system` is a preference, not a locale: every reader (tray, dialogs,
+    /// i18n_get) must end up on a dictionary that exists.
+    #[test]
+    fn system_preference_resolves_to_a_shipped_locale() {
+        let resolved = resolve("system");
+        assert!(resolved == "zh" || resolved == "en", "unexpected locale {resolved}");
+        assert_ne!(translate("system", "lite.menu.quit"), "lite.menu.quit");
+        assert_eq!(translate("en", "lite.menu.quit"), "Quit");
+        assert_eq!(translate("zh", "lite.menu.quit"), "退出");
     }
 }

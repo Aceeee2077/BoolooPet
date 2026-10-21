@@ -92,6 +92,8 @@ class FakeImage {
 
 const api = {
   getI18n: async () => ({ locale: 'zh', dict: zhDict }),
+  // The editor only uses it to tell a real language change from a config update.
+  getConfig: async () => ({ locale: 'zh' }),
   maskPreview: async (tolerance, feather) => {
     calls.mask.push({ tolerance, feather });
     return { ok: true, width: 4, height: 4, original: 'data:image/png;base64,ORIGINAL',

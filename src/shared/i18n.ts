@@ -27,6 +27,7 @@ export const zhDict: Record<string, I18nValue> = {
   // Settings panel
   'settings.close': '关闭',
   'settings.language': '界面语言',
+  'settings.localeSystem': '跟随系统',
   'settings.zh': '中文',
   'settings.en': 'English',
 
@@ -210,6 +211,8 @@ export const zhDict: Record<string, I18nValue> = {
   'lite.settings.general': '界面',
   'lite.settings.subtitle': '轻量桌宠',
   'lite.settings.github': '在浏览器中打开 GitHub 仓库',
+  'lite.settings.star': '如果喜欢 Booloo 这款桌宠，可以帮我去 GitHub 点个 Star 哦 : )',
+  'lite.settings.starLabel': '去 GitHub 点个 Star',
   'lite.settings.pets': '选择桌宠',
   'lite.skin.bulu': '布噜',
   'lite.skin.custom': '我的图片',
@@ -492,6 +495,7 @@ export const enDict: Record<string, I18nValue> = {
   // Settings panel
   'settings.close': 'Close',
   'settings.language': 'Language',
+  'settings.localeSystem': 'System',
   'settings.zh': '中文',
   'settings.en': 'English',
 
@@ -670,6 +674,8 @@ export const enDict: Record<string, I18nValue> = {
   'lite.settings.general': 'General',
   'lite.settings.subtitle': 'Lightweight pet',
   'lite.settings.github': 'Open the GitHub repository in your browser',
+  'lite.settings.star': 'If you enjoy Booloo, a star on GitHub would make my day : )',
+  'lite.settings.starLabel': 'Star Booloo on GitHub',
   'lite.settings.pets': 'Choose your pet',
   'lite.skin.bulu': 'Bulu',
   'lite.skin.custom': 'My image',

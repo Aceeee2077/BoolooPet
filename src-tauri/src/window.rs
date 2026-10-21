@@ -642,17 +642,18 @@ pub fn config_get(state: State<'_, ConfigState>) -> Value {
 
 #[tauri::command]
 pub fn config_set(app: AppHandle, state: State<'_, ConfigState>, patch: Value) -> Value {
-    let locale_before = state
-        .get("locale")
-        .as_str()
-        .unwrap_or("zh")
-        .to_string();
+    // Compare the *resolved* locales: switching to "system" on a machine that is
+    // already Chinese changes the preference but not the labels, and re-labelling
+    // the tray for nothing is a visible flicker.
+    let locale_before = crate::i18n::resolve(
+        state.get("locale").as_str().unwrap_or("zh"),
+    );
     let merged = state.apply(&patch);
     state.persist();
     let _ = app.emit("config-changed", merged.clone());
 
     // The tray labels / tooltip are localized, so a language switch re-labels them.
-    let locale_after = state.get("locale").as_str().unwrap_or("zh").to_string();
+    let locale_after = crate::i18n::resolve(state.get("locale").as_str().unwrap_or("zh"));
     if locale_before != locale_after {
         let _ = crate::tray::rebuild(&app);
     }

@@ -205,7 +205,8 @@ pub async fn export_diagnostics(app: AppHandle) -> Value {
     let Some(picked) = receiver.recv().ok().flatten() else {
         return json!({ "ok": false, "cancelled": true });
     };
-    let locale = current_locale(&app);
+    let preference = current_locale(&app);
+    let locale = crate::i18n::resolve(&preference);
     let Ok(destination) = picked.into_path() else {
         return json!({ "ok": false, "error": translate(&locale, "dialog.readFailed") });
     };
