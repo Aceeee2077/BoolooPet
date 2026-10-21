@@ -136,7 +136,7 @@
     },
     petSave: (manifest: PetDefinition) => call<PetSaveResult>('pet_save', { manifest }),
     updateGetState: () => call<UpdateState>('update_get_state'),
-    updateCheck: () => call<UpdateState>('update_check'),
+    updateCheck: (force?: boolean) => call<UpdateState>('update_check', { force: force ?? false }),
     updateDownload: () => call<UpdateState>('update_download'),
     updateInstall: () => call<void>('update_install'),
     updateInstallWhenReady: () => call<UpdateState>('update_install_when_ready'),

@@ -79,6 +79,8 @@
   const careMessage = $<HTMLParagraphElement>('care-message');
   const updateVersion = $<HTMLSpanElement>('update-version');
   const updateStatus = $<HTMLSpanElement>('update-status');
+  const updateLastCheck = $<HTMLSpanElement>('update-last-check');
+  const updateOffline = $<HTMLParagraphElement>('update-offline');
   const updateProgressRow = $<HTMLElement>('update-progress-row');
   const updateProgressBar = $<HTMLElement>('update-progress-bar');
   const updateProgressText = $<HTMLSpanElement>('update-progress-text');
@@ -168,11 +170,26 @@
   }
 
   /**
+   * "2026-10-21 09:30" for the last successful check.
+   *
+   * Deliberately not `toLocaleString`: the line has to stay one fixed shape in
+   * both dictionaries (and in the test harness), and the value is only ever
+   * read as "how old is this".
+   */
+  function formatLastCheck(at: number): string {
+    const date = new Date(at);
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+      `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  /**
    * Paint one update snapshot. The main process pushes a new one for every step
    * (check → available → downloading N% → downloaded), so this is the only place
    * that decides what the buttons and the progress bar show.
    */
   function renderUpdate(state: UpdateState) {
+    const previous = lastUpdate;
     lastUpdate = state;
     const running = state.currentVersion ? `v${state.currentVersion}` : '—';
     // The `{v}` keys already spell the leading "v" ("发现新版本 v{v}"), so the
@@ -202,6 +219,17 @@
         break;
       default: updateStatus.textContent = liteT('settings.updateIdle');
     }
+
+    // Progress snapshots carry no timestamp, so keep the last one painted.
+    const checkedAt = state.lastChecked ?? previous?.lastChecked;
+    if (checkedAt !== undefined) {
+      updateLastCheck.textContent = formatLastCheck(checkedAt);
+    } else if (state.status === 'idle') {
+      updateLastCheck.textContent = liteT('settings.updateNever');
+    }
+    // A failed check is not an error line: the status stays on the cached result
+    // and this note explains why it may be old.
+    updateOffline.hidden = !state.stale;
 
     const percent = Math.min(100, Math.max(0, Math.round(state.progress?.percent ?? 0)));
     updateProgressRow.hidden = state.status !== 'downloading';
@@ -1082,7 +1110,8 @@
   });
   checkUpdateButton.addEventListener('click', async () => {
     checkUpdateButton.disabled = true;
-    renderUpdate(await window.api.updateCheck());
+    // `true` bypasses the six-hour throttle: this is the user asking now.
+    renderUpdate(await window.api.updateCheck(true));
   });
   downloadUpdateButton.addEventListener('click', async () => {
     downloadUpdateButton.hidden = true;

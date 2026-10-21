@@ -74,6 +74,10 @@ interface UpdateState {
    * selectable text instead of launching a browser from the renderer.
    */
   manualUrl?: string;
+  /** Epoch ms of the last successful check (survives restarts via the cache) */
+  lastChecked?: number;
+  /** This snapshot is the cached result because the latest check could not run */
+  stale?: boolean;
   autoCheck: boolean;
   autoDownload: boolean;
   channel: UpdateChannel;
@@ -439,6 +443,12 @@ interface AppConfig {
   updateAutoDownload: boolean;
   /** Update: stable releases only, or include pre-releases */
   updateChannel: UpdateChannel;
+  /** Update: explicit proxy URL ("" = follow the OS proxy settings) */
+  updateProxy: string;
+  /** Update: comma / newline separated mirror manifests or release pages */
+  updateMirror: string;
+  /** Update: extra PEM root certificate for a mirror behind a private CA ("" = none) */
+  updateCaCert: string;
 }
 
 /** One local day's counters behind the click heatmap and the health summary. */
@@ -599,8 +609,8 @@ interface PetApi {
   autoLaunchSet(enabled: boolean): Promise<boolean>;
   /** Read the current update state (also refreshes persisted preferences) */
   updateGetState(): Promise<UpdateState>;
-  /** Manually check for updates from the settings panel (no native dialogs) */
-  updateCheck(): Promise<UpdateState>;
+  /** Manually check for updates from the settings panel (`force` skips the 6 h throttle) */
+  updateCheck(force?: boolean): Promise<UpdateState>;
   /** Start / resume the background download of an available update */
   updateDownload(): Promise<UpdateState>;
   /** Restart the app and install an already-downloaded update */

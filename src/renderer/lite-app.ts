@@ -423,8 +423,9 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
       const state = await window.api.updateCheck();
       announceUpdate(state);
       // Auto-download follows the check, so the pet can hand over the "ready"
-      // notice instead of making the user press a second button.
-      if (state.status === 'available' && state.autoDownload) {
+      // notice instead of making the user press a second button. A stale result
+      // means the network is down — downloading it would only fail loudly.
+      if (state.status === 'available' && state.autoDownload && !state.stale) {
         announceUpdate(await window.api.updateDownload());
       }
     } catch (error) {

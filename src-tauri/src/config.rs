@@ -83,7 +83,16 @@ pub fn defaults() -> Value {
         "snapToEdge": false,
         "updateAutoCheck": true,
         "updateAutoDownload": true,
-        "updateChannel": "stable"
+        "updateChannel": "stable",
+        // The update check is the one request that has to work from behind a
+        // corporate proxy, so both knobs live here rather than in a UI nobody
+        // opens: "" = use the OS proxy, otherwise "http://host:port".
+        "updateProxy": "",
+        // Comma / newline separated mirror endpoints (a latest.json or a release
+        // page). Only tried when GitHub itself cannot answer.
+        "updateMirror": "",
+        // Optional PEM root for a mirror behind a private CA.
+        "updateCaCert": ""
     })
 }
 

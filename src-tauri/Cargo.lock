@@ -314,11 +314,14 @@ dependencies = [
 
 [[package]]
 name = "booloo"
-version = "0.6.24"
+version = "0.6.25"
 dependencies = [
  "auto-launch",
  "base64 0.22.1",
  "image",
+ "reqwest",
+ "rustls",
+ "semver",
  "serde",
  "serde_json",
  "tauri",

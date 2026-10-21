@@ -1,6 +1,6 @@
 [package]
 name = "booloo"
-version = "0.6.24"
+version = "0.6.25"
 description = "Booloo · cross-platform desktop pet"
 authors = ["Booloo Contributors"]
 edition = "2021"
@@ -26,6 +26,12 @@ tauri-plugin-autostart = "2"
 auto-launch = "0.5"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
+# The update probe talks to GitHub and the optional mirror itself: one bare GET
+# per endpoint, no REST quota. `rustls-no-provider` keeps this on the ring
+# provider the updater plugin already installs instead of pulling in aws-lc-rs.
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider", "system-proxy", "json"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+semver = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"
