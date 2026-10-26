@@ -173,6 +173,18 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
   /** Days with a real interaction, pending merge into `statsDays`. */
   const daysToAdd = new Set<string>();
   /**
+   * The achievement shelf this window owns. It is seeded from the config once,
+   * then updated locally so a badge can be celebrated the moment it lands rather
+   * than a config write later; `flushStats` writes the whole shelf with the rest
+   * of the buffered counters.
+   */
+  let achievements: AchievementState = { unlocked: {}, counters: {} };
+  let achievementsSeeded = false;
+  let achievementsDirty = false;
+  /** Achievement lines waiting for the pet to finish its current sentence. */
+  const achievementQueue: string[] = [];
+  let achievementQueueTimer: number | null = null;
+  /**
    * The score and the lifetime click count the pet owns.
    *
    * They are kept here rather than re-read from the config on every award: a
@@ -499,6 +511,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
       // After the action, because starting one clears whatever bubble was up.
       say(liteT('lite.pet.purring'), 2200);
     }
+    bumpAchievement('pets');
+    settleAchievements();
   }
 
   /**
@@ -551,6 +565,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
       clickUntil = performance.now() + 1100;
       say(liteT('lite.pet.standReminder'), 6500);
       bumpDaily('stand', true);
+      bumpAchievement('healths');
+      settleAchievements();
     }
   }
 
@@ -619,6 +635,105 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     entry[kind] = (Number(entry[kind]) || 0) + 1;
     const at = performance.now() + (flushNow ? 0 : STATS_FLUSH_MS);
     statsFlushAt = statsFlushAt ? Math.min(statsFlushAt, at) : at;
+  }
+
+  // ---------- achievements ----------
+  /** Lower the next config write, and keep it on the same batching clock. */
+  function markAchievementsDirty() {
+    achievementsDirty = true;
+    const at = performance.now() + STATS_FLUSH_MS;
+    statsFlushAt = statsFlushAt ? Math.min(statsFlushAt, at) : at;
+  }
+
+  /** Raise one lifetime achievement counter (see AchievementCounter). */
+  function bumpAchievement(counter: AchievementCounter, by = 1) {
+    if (!config) return;
+    achievements = achievementStateWithCounter(achievements, counter, by);
+    markAchievementsDirty();
+  }
+
+  /**
+   * The live context for an achievement check.
+   *
+   * The config trails this window by one batch, so the buffered clicks, the
+   * score already handed out and the days added since the last write are folded
+   * in here. Otherwise the hundredth click would not light its badge until the
+   * next five-second flush.
+   */
+  function achievementNow(): AchievementContext {
+    const cfg = config as AppConfig;
+    const today = liteDayKey();
+    const context = achievementContext(cfg, {
+      clicks: clicksTotal >= 0 ? clicksTotal : Number(cfg.statsClicks) || 0,
+      affinity: affinityTotal >= 0 ? affinityTotal : Number(cfg.affinity) || 0,
+      days: new Set([...(cfg.statsDays ?? []), ...daysToAdd]).size,
+      counters: achievements.counters,
+    });
+    const todayClicks = (Number(cfg.dailyStats?.[today]?.clicks) || 0) +
+      (Number(pendingStats[today]?.clicks) || 0);
+    context.bestDayClicks = Math.max(context.bestDayClicks, todayClicks);
+    return context;
+  }
+
+  /**
+   * Award every badge whose target is now met.
+   *
+   * Only the locked → unlocked edge is celebrated. `initial` is the one read at
+   * startup: an existing user can meet a dozen thresholds retroactively, and
+   * stacking a dozen speech bubbles would bury the pet under its own trophies —
+   * one summary line is enough. Returns the ids earned, for tests and callers
+   * that want to know.
+   */
+  /**
+   * Announce a badge without stealing the line of the interaction that just
+   * happened ("好舒服呀～" matters more than the trophy it earned). If the pet
+   * is busy talking, the badge waits for the bubble to clear.
+   */
+  function announceAchievement(line: string) {
+    if (speech.hidden && !signVisible()) {
+      say(line, 5600);
+      return;
+    }
+    achievementQueue.push(line);
+    if (achievementQueueTimer !== null) return;
+    const flush = () => {
+      achievementQueueTimer = null;
+      if (!achievementQueue.length) return;
+      if (!speech.hidden || signVisible()) {
+        achievementQueueTimer = window.setTimeout(flush, 1400);
+        return;
+      }
+      say(achievementQueue.shift() as string, 5200);
+      if (achievementQueue.length) achievementQueueTimer = window.setTimeout(flush, 1600);
+    };
+    achievementQueueTimer = window.setTimeout(flush, 1400);
+  }
+
+  function settleAchievements(initial = false): string[] {
+    if (!config) return [];
+    const fresh = achievementFresh(config, achievementNow(), achievements);
+    if (!fresh.length) return [];
+    achievements = achievementStateWithUnlocks(achievements, fresh.map(item => item.id), liteDayKey());
+    markAchievementsDirty();
+    if (initial) {
+      // After the window has settled, and only if nothing else is speaking.
+      window.setTimeout(() => {
+        if (config) announceAchievement(liteT('lite.achievements.caughtUp', { n: fresh.length }));
+      }, 3200);
+    } else {
+      showHearts();
+      announceAchievement(fresh.length === 1
+        ? liteT('lite.achievements.unlocked', { name: liteT(fresh[0].nameKey) })
+        : liteT('lite.achievements.unlockedMany', { n: fresh.length }));
+    }
+    return fresh.map(item => item.id);
+  }
+
+  /** Night-owl and early-bird badges are about when the tap happened. */
+  function noteTapMoment() {
+    const hour = new Date().getHours();
+    if (hour < 5) bumpAchievement('nightTaps');
+    else if (hour < 7) bumpAchievement('earlyTaps');
   }
 
   function showAffinityChip(gain: number) {
@@ -707,7 +822,7 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
   function flushStats() {
     if (!config) return;
     const days = Object.keys(pendingStats);
-    if (!days.length && !daysToAdd.size && affinityTotal < 0 && !needsDirty) return;
+    if (!days.length && !daysToAdd.size && affinityTotal < 0 && !needsDirty && !achievementsDirty) return;
     const patch: Partial<AppConfig> = {};
     const merged: Record<string, DailyStat> = { ...(config.dailyStats ?? {}) };
     for (const day of days) {
@@ -739,6 +854,15 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
       for (const day of daysToAdd) known.add(day);
       patch.statsDays = [...known].sort().slice(-STATS_KEEP_DAYS);
       daysToAdd.clear();
+    }
+    if (achievementsDirty) {
+      // The whole shelf travels in one patch; the backend deep-merges the two
+      // maps, so a badge earned in another window is never dropped.
+      patch.achievements = {
+        unlocked: { ...achievements.unlocked },
+        counters: { ...achievements.counters },
+      };
+      achievementsDirty = false;
     }
     if (!config.statsFirstSeen) patch.statsFirstSeen = liteDayKey();
     void window.api.setConfig(patch)
@@ -822,6 +946,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     awardAffinity('feed', done.food.affinity);
     // A level-up bubble from that award outranks "yum"; leave it alone.
     if (!quiet && spent - affinitySpokeAt >= 600) say(liteT(done.food.lineKey), 3200);
+    bumpAchievement('feeds');
+    settleAchievements();
   }
 
   /** Start a play session: the wand swings, the pet lunges, catches pay off. */
@@ -874,6 +1000,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
       if (toy.catches === 1 && performance.now() - affinitySpokeAt >= 600) {
         say(liteT('lite.care.toy.catch'), 1600);
       }
+      bumpAchievement('toyCatches');
+      settleAchievements();
       return;
     }
     if (pressed || signVisible() || now < toy.nextPounceAt) return;
@@ -998,6 +1126,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     // After the action: starting one clears whatever bubble was on screen.
     say(liteT('lite.pet.eyeRest'), 6000);
     bumpDaily('eye', true);
+    bumpAchievement('healths');
+    settleAchievements();
   }
 
   function announceWater() {
@@ -1005,6 +1135,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     clickUntil = performance.now() + 900;
     say(liteT('lite.pet.water'), 6000);
     bumpDaily('water', true);
+    bumpAchievement('healths');
+    settleAchievements();
   }
 
   function checkReminders() {
@@ -1197,11 +1329,18 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     const loadChanged = !config || config.loadAwareness !== next.loadAwareness;
     // Strings come from the backend dictionary, so a language switch re-fetches it.
     const localeChanged = !config || config.locale !== next.locale;
+    // The shelf is seeded once. After that this window owns it while it has
+    // pending changes; a clean window still adopts a restored backup or an
+    // external edit on the next broadcast.
+    const firstAchievementConfig = !achievementsSeeded;
+    if (firstAchievementConfig) achievementsSeeded = true;
+    if (firstAchievementConfig || !achievementsDirty) achievements = achievementState(next);
     config = next;
     // The score and the lifetime click count only ever grow locally; a config
     // that already carries more (an older pet window, a hand-edited file) wins.
     affinityTotal = Math.max(affinityTotal < 0 ? 0 : affinityTotal, Number(next.affinity) || 0);
     clicksTotal = Math.max(clicksTotal < 0 ? 0 : clicksTotal, Number(next.statsClicks) || 0);
+    if (firstAchievementConfig) settleAchievements(true);
     // The needs are taken from the config exactly once. From then on this window
     // owns them; a broadcast carrying the value it wrote a moment ago must not
     // roll the drift back.
@@ -1630,6 +1769,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     activity();
     activeAction = { kind: 'scratch', started: now, duration: 2100 };
     say(liteT('lite.pet.longPress'), 2600);
+    bumpAchievement('holds');
+    settleAchievements();
   }
 
   function hit(x: number, y: number) {
@@ -1665,6 +1806,8 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     markActiveDay();
     awardAffinity('fileDrop');
     say(liteFileReaction(paths));
+    bumpAchievement('fileDrops');
+    settleAchievements();
   });
   window.api.onPetAction(playAction);
   // The right-click menu and the settings panel both reach the pet through this
@@ -1763,6 +1906,7 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     greetIfFirstToday();
     markActiveDay();
     awardAffinity('tap');
+    noteTapMoment();
     clickUntil = now + 580;
     activity();
     const double = now - lastTapAt < DOUBLE_TAP_MS;
@@ -1771,14 +1915,17 @@ const OUTLINE_OFFSETS: ReadonlyArray<readonly [number, number]> =
     // with its own summary instead of being read as a second pat.
     if (!double || toy) {
       tapReaction(pressRegion, now);
+      settleAchievements();
       return;
     }
     activity();
     showHearts();
     playAction('wave');
     awardAffinity('doubleTap');
+    bumpAchievement('doubleTaps');
     // After the action: starting one clears whatever bubble was on screen.
     say(liteT('lite.pet.doubleTap'), 2400);
+    settleAchievements();
   }
   window.addEventListener('mouseup', (event) => {
     // The release position is part of the gesture, not just the end of it: when the

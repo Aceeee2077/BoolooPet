@@ -133,6 +133,7 @@ vm.createContext(context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist', 'renderer', 'lite-i18n.js'), 'utf8'), context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist', 'renderer', 'lite-day.js'), 'utf8'), context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist', 'renderer', 'lite-affinity.js'), 'utf8'), context);
+vm.runInContext(readFileSync(join(process.cwd(), 'dist', 'renderer', 'lite-achievements.js'), 'utf8'), context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist', 'renderer', 'lite-care.js'), 'utf8'), context);
 // The weekly summary is built from the same per-day buckets the heatmap draws.
 vm.runInContext(readFileSync(join(process.cwd(), 'dist', 'renderer', 'lite-summary.js'), 'utf8'), context);

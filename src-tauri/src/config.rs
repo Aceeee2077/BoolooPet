@@ -55,6 +55,10 @@ pub fn defaults() -> Value {
         "statsDays": [],
         "statsClicks": 0,
         "affinityHistory": [],
+        // Achievement shelf: id -> local day earned, plus the lifetime counters
+        // the event badges are measured against (see lite-achievements.ts). A
+        // file written before the badges existed simply gets the empty shelf.
+        "achievements": { "unlocked": {}, "counters": {} },
         "hourlyChime": true,
         "autoMove": true,
         "fileDropReactions": true,

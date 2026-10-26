@@ -137,6 +137,7 @@ vm.createContext(context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist/renderer/lite-i18n.js'), 'utf8'), context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist/renderer/lite-day.js'), 'utf8'), context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist/renderer/lite-affinity.js'), 'utf8'), context);
+vm.runInContext(readFileSync(join(process.cwd(), 'dist/renderer/lite-achievements.js'), 'utf8'), context);
 vm.runInContext(readFileSync(join(process.cwd(), 'dist/renderer/lite-care.js'), 'utf8'), context);
 // The gait owns the walking frame, the body bob and the glide speed, and the
 // pack model owns how an imported character is drawn — the pet loop calls into

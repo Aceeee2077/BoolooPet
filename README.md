@@ -28,7 +28,7 @@ Pick a picture and Rust builds the first cutout mask locally — a border-seeded
 Booloo reads CPU, memory and battery. A processor that stays pinned makes it sweat and mutter about it; a battery under 20% puts a 🪫 badge on it and sends it to nap more often; plugging in wakes it right back up. All of it is read locally through system APIs — Windows `kernel32`, the 1-minute load average on macOS — and it can be switched off in one click.
 
 **3 · Companionship you can actually measure.**
-Petting it, poking it and dropping files on it raise affinity through five levels, from Stranger to Best Friend — and the first interaction of *each day* is worth a bonus, so the score reflects time spent together rather than one long click session. Settings draws every click over a whole calendar year as a heatmap, alongside the days you have been together.
+Petting it, poking it and dropping files on it raise affinity through five levels, from Stranger to Best Friend — and the first interaction of *each day* is worth a bonus, so the score reflects time spent together rather than one long click session. Settings draws every click over a whole calendar year as a heatmap, alongside the days you have been together, and 22 achievement badges mark the milestones along the way — first touch, a thousand pokes, a seven-day streak, the first treat, and more.
 
 ## Install
 
@@ -173,6 +173,7 @@ src/renderer/      pet page index.html, settings.html, cutout window mask.html, 
   lite-gait.ts     the walking gait: frame length, body bob and the ground covered per stride
   lite-pack.ts     pet packs: which animation a state means, and which frame of the sheet it is
   lite-summary.ts  this week's totals, read out of the per-day counters the heatmap draws
+  lite-achievements.ts  the 22 badges: definitions, progress and unlock state
   lite-throw.ts    the throw: release velocity, friction, and the four work-area walls
   lite-api.ts      Tauri bridge (window / config / drag / events)
   lite-image.ts    image import: loading, bounds and validation

@@ -65,6 +65,8 @@
   const summaryWater = $<HTMLElement>('summary-water');
   const summaryAffinity = $<HTMLElement>('summary-affinity');
   const summaryLine = $<HTMLElement>('summary-line');
+  const achievementGrid = $<HTMLElement>('achievement-grid');
+  const achievementSummary = $<HTMLElement>('achievement-summary');
   const reportRange = $<HTMLElement>('report-range');
   const reportDays = $<HTMLElement>('report-days');
   const reportClicks = $<HTMLElement>('report-clicks');
@@ -682,6 +684,84 @@
     reportLines.textContent = lines.join(' ');
   }
 
+  // ---------- achievements ----------
+  /**
+   * The badge wall. The catalogue and every threshold live in lite-achievements.ts,
+   * so this only turns the shared view into cards: the icon, the name, the
+   * description, a progress bar while locked, and the date once earned.
+   *
+   * The signature skips a rebuild when nothing on the shelf changed — the pet
+   * flushes a config update every few seconds while it is being clicked, and 22
+   * fresh DOM nodes per write would be pointless churn.
+   */
+  let achievementSignature = '';
+
+  function paintAchievements(cfg: AppConfig) {
+    const items = achievementView(cfg);
+    const signature = `${liteCurrentLocale()}|${items.map(item =>
+      `${item.unlocked ? '1' : '0'}:${item.unlockedAt ?? ''}:${item.value}:${item.target}`).join(',')}`;
+    if (signature === achievementSignature) return;
+    achievementSignature = signature;
+    const unlocked = items.filter(item => item.unlocked).length;
+    achievementSummary.textContent = liteT('lite.achievements.summary', {
+      unlocked, total: items.length,
+    });
+    achievementGrid.textContent = '';
+    for (const item of items) {
+      const card = document.createElement('article');
+      card.className = 'achievement-card';
+      card.dataset.unlocked = item.unlocked ? 'true' : 'false';
+      card.dataset.category = item.definition.category;
+
+      const top = document.createElement('div');
+      top.className = 'achievement-top';
+      const icon = document.createElement('span');
+      icon.className = 'achievement-icon';
+      icon.textContent = item.definition.icon;
+      icon.setAttribute('aria-hidden', 'true');
+      const heading = document.createElement('div');
+      heading.className = 'achievement-heading';
+      const category = document.createElement('span');
+      category.className = 'achievement-cat';
+      category.textContent = liteT(item.definition.categoryKey);
+      const name = document.createElement('strong');
+      name.textContent = liteT(item.definition.nameKey);
+      heading.append(category, name);
+      top.append(icon, heading);
+
+      const description = document.createElement('small');
+      description.className = 'achievement-desc';
+      description.textContent = liteT(item.definition.descKey);
+
+      const track = document.createElement('div');
+      track.className = 'achievement-track';
+      const fill = document.createElement('span');
+      fill.className = 'achievement-fill';
+      fill.style.width = `${Math.round(item.progress * 100)}%`;
+      track.append(fill);
+
+      const foot = document.createElement('div');
+      foot.className = 'achievement-foot';
+      const label = document.createElement('span');
+      const percent = document.createElement('span');
+      if (item.unlocked) {
+        label.textContent = liteT('lite.achievements.unlockedAt', {
+          date: dayLabel(item.unlockedAt ?? ''),
+        });
+        percent.textContent = '✓';
+      } else {
+        label.textContent = liteT('lite.achievements.progress', {
+          value: Math.min(item.value, item.target), target: item.target,
+        });
+        percent.textContent = `${Math.round(item.progress * 100)}%`;
+      }
+      foot.append(label, percent);
+
+      card.append(top, description, track, foot);
+      achievementGrid.append(card);
+    }
+  }
+
   // ---------- pet packs ----------
   /**
    * Installed pet packs, as last listed by the backend.
@@ -936,6 +1016,7 @@
     }
     paintCare(cfg);
     paintHealth(cfg);
+    paintAchievements(cfg);
     paintHeatmap(cfg);
     paintSummary(cfg);
     paintReport(cfg);

@@ -275,7 +275,7 @@ function desktopPage(locale) {
 }
 
 copyFileSync(join(ROOT, 'src', 'assets', 'animated-pets', 'bulu.png'), join(scratch, 'pet.png'));
-for (const asset of ['lite-i18n.js', 'lite-day.js', 'lite-affinity.js', 'lite-care.js', 'lite-api.js', 'lite-image.js', 'lite-summary.js', 'lite-report.js', 'lite-pack.js', 'lite-pack-editor.js', 'lite-settings.js', 'lite-settings.css']) {
+for (const asset of ['lite-i18n.js', 'lite-day.js', 'lite-affinity.js', 'lite-achievements.js', 'lite-care.js', 'lite-api.js', 'lite-image.js', 'lite-summary.js', 'lite-report.js', 'lite-pack.js', 'lite-pack-editor.js', 'lite-settings.js', 'lite-settings.css']) {
   copyFileSync(join(RENDERER, asset), join(scratch, asset));
 }
 

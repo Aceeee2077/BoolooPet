@@ -88,8 +88,8 @@ context.liteT = makeTranslate(zhDict);
 
 const renderer = join(process.cwd(), 'dist', 'renderer');
 const shippedScripts = readdirSync(renderer).filter(name => name.endsWith('.js')).sort();
-assert.deepEqual(shippedScripts, ['lite-affinity.js', 'lite-api.js', 'lite-app.js', 'lite-care.js', 'lite-day.js',
-  'lite-file-reaction.js', 'lite-gait.js', 'lite-i18n.js', 'lite-image.js', 'lite-mask.js', 'lite-menu.js',
+assert.deepEqual(shippedScripts, ['lite-achievements.js', 'lite-affinity.js', 'lite-api.js', 'lite-app.js', 'lite-care.js',
+  'lite-day.js', 'lite-file-reaction.js', 'lite-gait.js', 'lite-i18n.js', 'lite-image.js', 'lite-mask.js', 'lite-menu.js',
   'lite-pack-editor.js', 'lite-pack.js', 'lite-pet-outline.js', 'lite-pet-timing.js', 'lite-report.js', 'lite-settings.js',
   'lite-summary.js', 'lite-throw.js']);
 const fileReaction = { liteT: makeTranslate(zhDict) };
@@ -138,6 +138,74 @@ assert.equal(affinityConst('AFFINITY_DAILY_CAP'), 40, 'a day is capped so it can
 assert.equal(affinityConst('AFFINITY_FIRST_HELLO'), 5);
 affinity.liteT = makeTranslate(enDict);
 assert.equal(affinity.affinityLevelName(4), 'Best Friend');
+
+// Achievements: the catalogue, the thresholds and the one-way unlock edge. The
+// pet awards from this shared script and Settings draws the same view, so a
+// badge here is the only place its target can live.
+const badges = { liteT: makeTranslate(zhDict) };
+vm.createContext(badges);
+vm.runInContext(readFileSync(join(renderer, 'lite-day.js'), 'utf8'), badges);
+vm.runInContext(readFileSync(join(renderer, 'lite-achievements.js'), 'utf8'), badges);
+const badgeDefinitions = badges.achievementDefinitions();
+assert.equal(badgeDefinitions.length, 22);
+assert.equal(new Set(badgeDefinitions.map(definition => definition.id)).size, 22,
+  'achievement ids are persisted, so they must be unique');
+for (const definition of badgeDefinitions) {
+  assert.ok(definition.target > 0, `${definition.id} needs a positive target`);
+  for (const key of [definition.nameKey, definition.descKey, definition.categoryKey]) {
+    for (const dict of [zhDict, enDict]) assert.equal(typeof dict[key], 'string', `missing ${key}`);
+  }
+}
+const blank = {
+  statsClicks: 0,
+  affinity: 0,
+  statsDays: [],
+  dailyStats: {},
+  achievements: { unlocked: {}, counters: {} },
+};
+assert.deepEqual(Array.from(badges.achievementFresh(blank), definition => definition.id), [],
+  'a fresh install has nothing to backdate');
+const firstPoke = { ...blank, statsClicks: 1 };
+assert.deepEqual(Array.from(badges.achievementFresh(firstPoke), definition => definition.id), ['first_click']);
+const busy = {
+  ...blank,
+  statsClicks: 100,
+  statsDays: ['2026-10-01'],
+  dailyStats: { '2026-10-01': { clicks: 50 } },
+  achievements: { unlocked: { first_click: '2026-01-01' }, counters: { feeds: 10 } },
+};
+const busyFresh = Array.from(badges.achievementFresh(busy), definition => definition.id);
+assert.ok(busyFresh.includes('clicks_100'));
+assert.ok(busyFresh.includes('busy_day'), 'a 50-click day earns the busy-day badge');
+assert.ok(busyFresh.includes('first_feed') && busyFresh.includes('feeder_10'));
+assert.ok(!busyFresh.includes('first_click'), 'an earned badge is never awarded twice');
+assert.ok(!busyFresh.includes('clicks_1000'), 'the next threshold stays locked');
+const sevenDays = [...Array(7)].map((_, index) => `2026-10-0${index + 1}`);
+const streakContext = badges.achievementContext({ ...blank, statsDays: sevenDays });
+assert.equal(streakContext.days, 7);
+assert.equal(streakContext.streak, 7, 'seven consecutive local days are one streak');
+assert.ok(Array.from(badges.achievementFresh({ ...blank, statsDays: sevenDays }), definition => definition.id)
+  .includes('streak_7'));
+const unlocked = badges.achievementStateWithUnlocks(
+  { unlocked: { first_click: '2026-10-01' }, counters: {} },
+  ['first_click', 'clicks_100'],
+  '2026-10-26',
+);
+assert.equal(unlocked.unlocked.first_click, '2026-10-01', 'the first award date is the honest one');
+assert.equal(unlocked.unlocked.clicks_100, '2026-10-26');
+const raised = badges.achievementStateWithCounter({ unlocked: {}, counters: { feeds: 2 } }, 'feeds', 3);
+assert.equal(raised.counters.feeds, 5);
+const playView = badges.achievementView({
+  ...blank,
+  achievements: { unlocked: {}, counters: { toyCatches: 5 } },
+}).find(item => item.definition.id === 'play_10');
+assert.equal(playView.value, 5);
+assert.equal(playView.target, 10);
+assert.equal(playView.progress, 0.5);
+assert.equal(playView.unlocked, false);
+const badgesHtml = readFileSync(join(renderer, 'settings.html'), 'utf8');
+assert.match(badgesHtml, /id="achievement-grid"/);
+assert.match(badgesHtml, /lite-achievements\.js/);
 
 // The care model: hunger drift, the three treats, the tray geometry and the
 // wand. The pet window, the settings panel and the tests all read this one

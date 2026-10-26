@@ -26,7 +26,7 @@ for (const f of files) {
 }
 // Compile the legacy modules for source compatibility, but ship only the scripts
 // loaded by the lightweight pages.
-const runtimeScripts = new Set(['lite-i18n.js', 'lite-day.js', 'lite-affinity.js', 'lite-care.js', 'lite-gait.js', 'lite-summary.js', 'lite-report.js', 'lite-pack.js', 'lite-pack-editor.js', 'lite-throw.js', 'lite-api.js', 'lite-image.js', 'lite-file-reaction.js', 'lite-pet-timing.js', 'lite-pet-outline.js', 'lite-app.js', 'lite-settings.js', 'lite-mask.js', 'lite-menu.js']);
+const runtimeScripts = new Set(['lite-i18n.js', 'lite-day.js', 'lite-affinity.js', 'lite-achievements.js', 'lite-care.js', 'lite-gait.js', 'lite-summary.js', 'lite-report.js', 'lite-pack.js', 'lite-pack-editor.js', 'lite-throw.js', 'lite-api.js', 'lite-image.js', 'lite-file-reaction.js', 'lite-pet-timing.js', 'lite-pet-outline.js', 'lite-app.js', 'lite-settings.js', 'lite-mask.js', 'lite-menu.js']);
 for (const file of readdirSync(join(ROOT, 'dist', 'renderer'))) {
   if (file.endsWith('.js') && !runtimeScripts.has(file)) unlinkSync(join(ROOT, 'dist', 'renderer', file));
 }

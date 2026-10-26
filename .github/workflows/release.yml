@@ -131,13 +131,15 @@ jobs:
 
             - 摸头、摸背、双击与长按互动，眨眼及真实动作动画。
             - 好感度成长、点击热力图、健康计划及待办提醒。
+            - 22 枚成就徽章：互动、好感、陪伴与照顾里程碑，记录页可查看进度。
             - 本地自动抠图与手动微调，中英文界面。
             - 保留 Tauri 版的数据与更新标识；正式版迁移旧开机启动项，Windows 安装器迁移旧快捷方式。
 
             Booloo is a lightweight desktop companion featuring Bulu, image import,
             petting and gesture reactions, friendship growth, wellness reminders,
-            a click heatmap, local cutout editing, and Chinese / English UI.
-            Existing Tauri settings and the signed update channel are preserved.
+            a click heatmap, 22 achievement badges, local cutout editing, and
+            Chinese / English UI. Existing Tauri settings and the signed update
+            channel are preserved.
 
             Windows: `Booloo_x.y.z_x64-setup.exe`
             macOS: `Booloo_x.y.z_aarch64.dmg` (Apple Silicon) / `Booloo_x.y.z_x64.dmg` (Intel) — unsigned builds need right-click → Open the first time.

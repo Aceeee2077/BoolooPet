@@ -426,6 +426,13 @@ interface AppConfig {
   statsClicks: number;
   /** Affinity growth history (one snapshot per interaction day, newest last) */
   affinityHistory: AffinityPoint[];
+  /**
+   * Achievements: which badges have been earned and the lifetime event counters
+   * they are measured against (`feeds`, `toyCatches`, …). The catalogue itself
+   * lives in src/renderer/lite-achievements.ts; only the earned state is stored,
+   * so a config written before the badges existed simply has no key.
+   */
+  achievements?: AchievementState;
   /** Hourly chime: the pet jumps and announces the hour */
   hourlyChime: boolean;
   /** Autonomous movement: the pet walks / runs / jumps around the desktop on its own
@@ -466,6 +473,19 @@ interface DailyStat {
    * restart; nothing draws it yet.
    */
   affinity?: number;
+}
+
+/**
+ * The persisted half of the achievement system.
+ *
+ * `unlocked` maps an achievement id to the local day it was earned, so the badge
+ * wall can print a date without another timestamp format. `counters` holds the
+ * lifetime totals the event-based badges need (feeding, teaser catches, strokes,
+ * …); they are additive and survive a restart with the rest of the config.
+ */
+interface AchievementState {
+  unlocked: Record<string, string>;
+  counters: Record<string, number>;
 }
 
 /**

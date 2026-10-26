@@ -1,6 +1,6 @@
 {
   "name": "booloo",
-  "version": "0.6.27",
+  "version": "0.7.0",
   "description": "Booloo · 跨平台透明桌面宠物 / Cross-platform desktop pet (Tauri 2 + Rust + TypeScript + Canvas)",
   "author": "Booloo Contributors",
   "license": "MIT",

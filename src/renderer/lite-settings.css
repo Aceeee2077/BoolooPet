@@ -214,6 +214,24 @@ header button { border: 0; background: transparent; }
 .heatmap-foot .note { margin: 0; }
 .heatmap-legend { display: flex; align-items: center; gap: 3px; color: #a08a7a; font-size: 11px; }
 .heatmap-legend .heatmap-cell { width: 10px; height: 10px; }
+/* Achievements: a wall of small cards — grey until earned, then warm and dated.
+   The progress bar is only meaningful while locked, but keeping it on earned
+   cards too means the grid's rows stay the same height. */
+.achievement-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 10px; margin: 12px 0; }
+.achievement-card { display: flex; flex-direction: column; gap: 8px; min-height: 152px; padding: 12px; border: 1px solid #f0dccd; border-radius: 14px; background: #fffdfb; transition: border-color .2s ease, background .2s ease; }
+.achievement-card[data-unlocked="true"] { border-color: #efb184; background: linear-gradient(155deg, #fffaf2, #ffeeda); }
+.achievement-top { display: flex; align-items: center; gap: 9px; }
+.achievement-icon { flex: 0 0 auto; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: #f4e7db; font-size: 21px; line-height: 1; filter: grayscale(1); opacity: .55; }
+.achievement-card[data-unlocked="true"] .achievement-icon { filter: none; opacity: 1; background: linear-gradient(145deg, #ffe0b8, #ffc7d9); box-shadow: inset 0 1px 0 #fff; }
+.achievement-heading { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.achievement-heading strong { font-size: 13px; line-height: 1.25; }
+.achievement-cat { color: #b17858; font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+.achievement-desc { flex: 1 1 auto; color: #9a7660; font-size: 11px; line-height: 1.45; }
+.achievement-track { height: 6px; border-radius: 3px; background: #f2e4d8; overflow: hidden; }
+.achievement-fill { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #ffd09c, #ea773b); transition: width .25s ease; }
+.achievement-card[data-unlocked="true"] .achievement-fill { background: linear-gradient(90deg, #ffc06a, #ea773b); }
+.achievement-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #a65a37; font-size: 10px; }
+.achievement-card[data-unlocked="true"] .achievement-foot { color: #b8481a; font-weight: 600; }
 .update-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin-bottom: 12px; font-size: 13px; }
 .update-grid .value { color: #886c5b; }
 .update-grid .value.err { color: #ba3e2e; }
